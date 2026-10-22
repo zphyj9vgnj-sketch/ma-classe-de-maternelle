@@ -108,8 +108,8 @@ function clone(o) { return JSON.parse(JSON.stringify(o)); }
 function domColor(name) { for (var i = 0; i < PROG.length; i++) if (PROG[i].nom === name) return DOMC[i % DOMC.length]; return MINEC; }
 
 var BUILTIN = [
-  ['materiel', 'Matériel', 'long'], ['reussite', 'Critères de réussite', 'long'], ['realisation', 'Critères de réalisation', 'long'],
-  ['prerequis', 'Prérequis', 'long'], ['activites', 'Activités (déroulé)', 'long'], ['prolongement', 'Prolongement', 'long'],
+  ['objectif', 'Objectif', 'long'], ['activites', 'Déroulement', 'long'], ['materiel', 'Matériel', 'long'], ['reussite', 'Critères de réussite', 'long'], ['realisation', 'Critères de réalisation', 'long'],
+  ['prerequis', 'Prérequis', 'long'], ['prolongement', 'Prolongement', 'long'],
   ['institu', 'Institutionnalisation', 'long'], ['trace', 'Trace écrite', 'long'], ['diff', 'Différenciation', 'long'], ['orga', 'Organisation humaine', 'long']
 ];
 function defaultMine() {
@@ -121,7 +121,7 @@ function defaultMine() {
 function defaults() {
   return {
     v: 2,
-    fields: BUILTIN.map(function (b) { return { id: b[0], label: b[1], type: b[2], on: true, builtin: true }; }),
+    fields: BUILTIN.map(function (b) { return { id: b[0], label: b[1], type: b[2], on: true, builtin: true, req: b[0] === 'objectif' || b[0] === 'activites' }; }),
     days: {}, bank: [], todo: [], comptines: [], templates: [], mine: defaultMine(),
     cats: [
       { id: 'apc', nom: 'APC (activités pédagogiques complémentaires)', total: 36, entries: [] },
@@ -136,6 +136,10 @@ function fixData() {
   var d0 = defaults();
   ['bank', 'todo', 'comptines', 'templates'].forEach(function (k) { if (!Array.isArray(D[k])) D[k] = []; });
   if (!Array.isArray(D.mine)) D.mine = d0.mine;
+  var hasO = false;
+  D.fields.forEach(function (f) { if (f.id === 'objectif') hasO = true; if (f.id === 'activites') { f.req = true; f.on = true; if (/Activités/.test(f.label)) f.label = 'Déroulement'; } });
+  if (!hasO) D.fields.unshift({ id: 'objectif', label: 'Objectif', type: 'long', on: true, builtin: true, req: true });
+  D.fields.forEach(function (f) { if (f.id === 'objectif') { f.req = true; f.on = true; } });
   D.v = 2;
 }
 function load() {
@@ -188,7 +192,7 @@ function tJournal() {
   }
   bl.forEach(function (b) {
     var nobj = b.seances.reduce(function (a, s) { return a + s.obj.length; }, 0), col = blockColor(b);
-    h += '<button type="button" class="block" data-a="openBlock" data-p="' + b.id + '" style="border-left-color:' + col + ';background:linear-gradient(90deg,' + col + '18,var(--card) 60%)"><div class="row"><span class="time" style="color:' + col + '">' + esc(b.time || '--:--') + '</span><strong class="grow">' + esc(b.titre || 'Sans titre') + '</strong><span class="muted small">' + (b.duree ? esc(hm(b.duree)) : '') + '</span></div>';
+    h += '<button type="button" class="block" data-a="openBlock" data-p="' + b.id + '" style="border-left-color:' + col + ';background:linear-gradient(90deg,' + col + '18,var(--card) 60%)"><div class="row"><span class="time" style="color:' + col + '">' + esc((b.time || '--:--') + (endTime(b) ? '–' + endTime(b) : '')) + '</span><strong class="grow">' + esc(b.titre || 'Sans titre') + '</strong><span class="muted small">' + (b.duree ? esc(hm(b.duree)) : '') + '</span></div>';
     var sub = []; if (b.seances.length > 1) sub.push(b.seances.length + ' groupes'); if (nobj) sub.push(nobj + ' objectif' + (nobj > 1 ? 's' : ''));
     if (sub.length) h += '<div class="muted small">' + esc(sub.join(' · ')) + '</div>';
     h += '</button>';
@@ -229,10 +233,26 @@ function levelsHTML(s) {
   return h + '</div>';
 }
 
+function durChips(kind, cur) {
+  var h = '<div class="row wrap">';
+  [5, 10, 15, 20, 30, 45, 60].forEach(function (m) { h += '<button type="button" class="chip' + (cur === m ? ' on' : '') + '" data-a="setDur" data-p="' + kind + '" data-q="' + m + '">' + m + ' min</button>'; });
+  return h + '</div>';
+}
+function toMin(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+function fromMin(n) { n = ((n % 1440) + 1440) % 1440; return pad(Math.floor(n / 60)) + ':' + pad(n % 60); }
+function endTime(b) { var t = toMin(b.time); return t != null && b.duree ? fromMin(t + b.duree) : ''; }
+function nextStart(d) {
+  if (!d) return '';
+  var best = null;
+  d.blocks.forEach(function (b) { var t = toMin(b.time); if (t == null) return; var e = t + (b.duree || 0); if (best == null || e > best) best = e; });
+  return best == null ? '' : fromMin(best);
+}
 function tBlock() {
   var b = curBlock(); if (!b) { S.blockId = null; return tJournal(); }
   var h = '<button type="button" class="link" data-a="backDay">‹ Retour à la journée</button>';
   h += '<div class="card"><div class="row"><div style="width:130px"><label for="btime" style="margin-top:0">Heure</label><input type="time" id="btime" value="' + esc(b.time) + '" data-bind="b:time"></div><div class="grow"><label for="bduree" style="margin-top:0">Durée (min)</label><input type="number" id="bduree" inputmode="numeric" min="0" value="' + esc(b.duree || '') + '" data-bind="b:duree"></div></div>';
+  h += '<label>Durée rapide</label>' + durChips('b', b.duree);
+  h += '<p class="hint">Fin du moment : ' + esc(endTime(b) || '—') + '</p>';
   h += '<label for="btitre">Titre du moment</label><input type="text" id="btitre" value="' + esc(b.titre) + '" data-bind="b:titre" placeholder="Ex. : Regroupement, Ateliers, EPS…">';
   h += '<label>Couleur</label><div class="row wrap"><button type="button" class="chip' + (!b.color ? ' on' : '') + '" data-a="bColor" data-p="">Auto</button>';
   PALETTE.forEach(function (c) { h += '<button type="button" class="sw' + (b.color === c ? ' on' : '') + '" style="background:' + c + '" data-a="bColor" data-p="' + c + '" aria-label="Couleur"></button>'; });
@@ -291,7 +311,7 @@ function tItem() {
   var it = bankItem(S.itemId); if (!it) { S.itemId = null; return tBank(); }
   var h = '<button type="button" class="link" data-a="backBank">‹ Retour à la banque</button>';
   h += '<div class="card"><label for="ititre" style="margin-top:0">Titre</label><input type="text" id="ititre" data-bind="s:' + it.id + ':titre" value="' + esc(it.titre) + '" placeholder="Ex. : Quantité et écriture chiffrée">';
-  h += '<div class="row"><div class="grow"><label for="ikind">Type</label><select id="ikind" data-bind="s:' + it.id + ':kind"><option value="atelier"' + (it.kind === 'atelier' ? ' selected' : '') + '>Atelier</option><option value="rituel"' + (it.kind === 'rituel' ? ' selected' : '') + '>Rituel</option></select></div><div style="width:120px"><label for="iduree">Durée (min)</label><input type="number" id="iduree" inputmode="numeric" min="0" data-bind="s:' + it.id + ':duree" value="' + esc(it.duree || '') + '"></div></div></div>';
+  h += '<div class="row"><div class="grow"><label for="ikind">Type</label><select id="ikind" data-bind="s:' + it.id + ':kind"><option value="atelier"' + (it.kind === 'atelier' ? ' selected' : '') + '>Atelier</option><option value="rituel"' + (it.kind === 'rituel' ? ' selected' : '') + '>Rituel</option></select></div><div style="width:120px"><label for="iduree">Durée (min)</label><input type="number" id="iduree" inputmode="numeric" min="0" data-bind="s:' + it.id + ':duree" value="' + esc(it.duree || '') + '"></div></div>' + durChips('i', it.duree) + '</div>';
   h += '<div class="seance">' + levelsHTML(it) + objHTML(it) + fieldsHTML(it) + '</div>';
   h += '<div class="stack"><button type="button" class="btn" data-a="itemUse">Ajouter au cahier journal</button><button type="button" class="btn secondary" data-a="itemDup">Dupliquer</button><button type="button" class="btn danger" data-a="itemDel">Supprimer</button></div>';
   return h;
@@ -373,7 +393,7 @@ function tH108() {
   h += '<div class="card"><div class="row"><strong class="grow">Au total</strong><span>' + esc(hm(F)) + ' sur ' + esc(hm(T)) + '</span></div><div class="bar" style="margin:8px 0"><i style="width:' + Math.min(100, T ? F / T * 100 : 0) + '%"></i></div><div class="muted small">' + (F >= T ? 'Tout est fait.' : 'Il reste ' + esc(hm(T - F)) + '.') + '</div></div>';
   D.cats.forEach(function (c, ci) {
     var f = done(c), tot = c.total * 60, col = CATC[ci % CATC.length];
-    h += '<div class="card" style="border-left:8px solid ' + col + '"><h2>' + esc(c.nom) + '</h2><div class="row"><span class="grow">' + esc(hm(f)) + ' sur ' + esc(hm(tot)) + '</span><span class="muted small">' + (f >= tot ? 'complet' : 'reste ' + esc(hm(tot - f))) + '</span></div><div class="bar" style="margin:8px 0 10px"><i style="width:' + Math.min(100, tot ? f / tot * 100 : 0) + '%;background:' + col + '"></i></div>';
+    h += '<div class="card" style="border-left:8px solid ' + col + '"><input type="text" data-bind="c:' + c.id + ':nom" value="' + esc(c.nom) + '" aria-label="Nom de la catégorie" style="font-size:18px;font-weight:700;margin-bottom:8px"><div class="row"><span class="grow">' + esc(hm(f)) + ' sur ' + esc(hm(tot)) + '</span><span class="muted small">' + (f >= tot ? 'complet' : 'reste ' + esc(hm(tot - f))) + '</span></div><div class="bar" style="margin:8px 0 10px"><i style="width:' + Math.min(100, tot ? f / tot * 100 : 0) + '%;background:' + col + '"></i></div>';
     var en = c.entries.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     en.forEach(function (e) { h += '<button type="button" class="block" data-a="entryEdit" data-p="' + c.id + '" data-q="' + e.id + '" style="padding:10px 12px;border-left-color:' + col + '"><div class="row"><strong>' + esc(fmtShort(e.date)) + '</strong><span class="grow">' + esc(hm(e.min)) + '</span></div>' + (e.note ? '<div class="muted small">' + esc(e.note) + '</div>' : '') + '</button>'; });
     h += '<div class="row wrap"><button type="button" class="btn small" data-a="entryAdd" data-p="' + c.id + '" style="background:' + col + ';color:#fff">Ajouter des heures</button><button type="button" class="link" data-a="catEdit" data-p="' + c.id + '">Modifier</button></div></div>';
@@ -387,7 +407,7 @@ function tReglages() {
   var h = '<h1>Réglages</h1>';
   h += '<div class="card"><h2>Champs (cahier journal et ateliers)</h2><p class="muted small">Affiche, cache, renomme ou ajoute les champs. Les champs cachés gardent leur contenu.</p>';
   D.fields.forEach(function (f) {
-    h += '<div class="row" style="margin-bottom:8px"><button type="button" class="chip' + (f.on ? ' on' : '') + '" data-a="fToggle" data-p="' + f.id + '" aria-label="' + (f.on ? 'Cacher' : 'Afficher') + ' ' + esc(f.label) + '">' + (f.on ? 'Oui' : 'Non') + '</button><input type="text" class="grow" data-bind="f:' + f.id + ':label" value="' + esc(f.label) + '" aria-label="Nom du champ"><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="-1" aria-label="Monter">↑</button><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="1" aria-label="Descendre">↓</button>' + (f.builtin ? '' : '<button type="button" class="chip" data-a="fDel" data-p="' + f.id + '" aria-label="Supprimer le champ" style="color:var(--danger)">✕</button>') + '</div>';
+    h += '<div class="row" style="margin-bottom:8px"><button type="button" class="chip' + (f.on ? ' on' : '') + '" ' + (f.req ? 'disabled style="opacity:.6" ' : '') + 'data-a="fToggle" data-p="' + f.id + '" aria-label="' + (f.on ? 'Cacher' : 'Afficher') + ' ' + esc(f.label) + '">' + (f.on ? 'Oui' : 'Non') + '</button><input type="text" class="grow" data-bind="f:' + f.id + ':label" value="' + esc(f.label) + '" aria-label="Nom du champ"><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="-1" aria-label="Monter">↑</button><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="1" aria-label="Descendre">↓</button>' + (f.builtin ? '' : '<button type="button" class="chip" data-a="fDel" data-p="' + f.id + '" aria-label="Supprimer le champ" style="color:var(--danger)">✕</button>') + '</div>';
   });
   h += '<button type="button" class="btn secondary" data-a="fAdd">Ajouter un champ</button></div>';
   h += '<div class="card"><h2>Sauvegarde</h2><p class="muted small">Tout reste sur ce téléphone. Crée un fichier de sauvegarde pour changer de téléphone ou garder une copie. Les fichiers des comptines (audio, vidéo, PDF) ne sont pas inclus.</p><div class="stack"><button type="button" class="btn secondary" data-a="export">Créer ma sauvegarde</button><label class="btn secondary" for="imp" style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer">Retrouver ma sauvegarde</label><input type="file" id="imp" accept=".json,application/json,text/plain" style="display:none"></div>' + (S.msg ? '<p class="small" role="status" style="margin-top:8px">' + esc(S.msg) + '</p>' : '') + '</div>';
@@ -528,6 +548,7 @@ function bind(key, val, checked) {
     else if (p[2] === 'duree') s.duree = parseInt(val, 10) || 0;
     else if (p[2] === 'f') s.f[p[3]] = p[4] === 'c' ? (checked ? '1' : '') : val;
   }
+  else if (p[0] === 'c') { var cc = findCat(p[1]); if (cc) cc[p[2]] = val; }
   else if (p[0] === 'f') { D.fields.forEach(function (f) { if (f.id === p[1]) f[p[2]] = val; }); }
   saveSoon();
 }
@@ -544,9 +565,10 @@ function act(a, p, q) {
   else if (a === 'day') { S.date = addDays(S.date, parseInt(p, 10)); render({ top: true }); }
   else if (a === 'today') { S.date = iso(new Date()); render({ top: true }); }
   else if (a === 'dayLevel') { var d = dayOf(S.date, true), i = d.niveaux.indexOf(p); if (i >= 0) d.niveaux.splice(i, 1); else d.niveaux.push(p); save(); render(); }
-  else if (a === 'addBlock') { var d2 = dayOf(S.date, true), b = { id: uid(), time: '', titre: '', duree: 0, color: '', seances: [newSeance()] }; d2.blocks.push(b); save(); S.blockId = b.id; render({ top: true }); }
+  else if (a === 'addBlock') { var d2 = dayOf(S.date, true), b = { id: uid(), time: nextStart(d2), titre: '', duree: 0, color: '', seances: [newSeance()] }; d2.blocks.push(b); save(); S.blockId = b.id; render({ top: true }); }
   else if (a === 'openBlock') { S.blockId = p; render({ top: true }); }
   else if (a === 'backDay') { S.blockId = null; render({ top: true }); }
+  else if (a === 'setDur') { var m = parseInt(q, 10), tg = p === 'b' ? curBlock() : bankItem(S.itemId); if (tg) { tg.duree = m; save(); render(); } }
   else if (a === 'bColor') { var bc = curBlock(); if (bc) { bc.color = p; save(); render(); } }
   else if (a === 'addSeance') { var bb = curBlock(); if (bb) { bb.seances.push(newSeance()); save(); render(); } }
   else if (a === 'delSeance') { confirmSheet('Supprimer ce groupe et son contenu ?', 'delSeanceOk', p); }
@@ -606,7 +628,7 @@ function act(a, p, q) {
   else if (a === 'itemDup') { var i0 = bankItem(S.itemId); if (i0) { var c0 = clone(i0); c0.id = uid(); c0.titre = (c0.titre || '') + ' (copie)'; D.bank.push(c0); save(); S.itemId = c0.id; render({ top: true }); } }
   else if (a === 'itemDel') { confirmSheet('Supprimer cet élément de ta banque ?', 'itemDelOk'); }
   else if (a === 'itemDelOk') { D.bank = D.bank.filter(function (x) { return x.id !== S.itemId; }); save(); S.itemId = null; closeSheet(); render({ top: true }); }
-  else if (a === 'itemUse') { formSheet('Ajouter au cahier journal', '<label for="udate">Jour</label><input type="date" id="udate" value="' + esc(S.date) + '"><label for="utime">Heure</label><input type="time" id="utime">', 'Ajouter', 'itemUseOk'); }
+  else if (a === 'itemUse') { formSheet('Ajouter au cahier journal', '<label for="udate">Jour</label><input type="date" id="udate" value="' + esc(S.date) + '"><label for="utime">Heure</label><input type="time" id="utime" value="' + esc(nextStart(dayOf(S.date))) + '">', 'Ajouter', 'itemUseOk'); }
   else if (a === 'itemUseOk') {
     var it2 = bankItem(S.itemId), dt = $('#udate').value || S.date; if (!it2) return;
     var d6 = dayOf(dt, true); d6.blocks.push({ id: uid(), time: $('#utime').value || '', titre: it2.titre, duree: it2.duree || 0, color: '', seances: [stripSeance(it2)] });
