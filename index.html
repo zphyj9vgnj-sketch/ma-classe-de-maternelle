@@ -44,6 +44,8 @@ textarea { min-height:96px; resize:vertical; }
 .bar { height:10px; background:var(--soft); border-radius:999px; overflow:hidden; } .bar > i { display:block; height:100%; background:var(--accent); border-radius:999px; }
 .block { display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-left-width:8px; border-radius:16px; padding:12px 14px; margin:0 0 10px; font:inherit; color:var(--ink); cursor:pointer; }
 .block .time { font-weight:700; font-size:15px; }
+#view, #sheet .panel { scrollbar-width:none; -ms-overflow-style:none; }
+#view::-webkit-scrollbar, #sheet .panel::-webkit-scrollbar { display:none; width:0; height:0; }
 #nav { display:flex; border-top:1px solid var(--line); background:var(--card); padding-bottom:env(safe-area-inset-bottom, 0px); }
 #nav button { flex:1; min-width:0; background:none; border:0; font:inherit; font-size:10.5px; color:var(--muted); padding:9px 0 7px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; }
 #nav button.on { color:var(--accent); font-weight:700; }
@@ -399,7 +401,7 @@ function tComp() {
     x += '<div class="row wrap">';
     if (c.audioId) x += '<button type="button" class="btn secondary small" data-a="compPlay" data-p="' + c.id + '">' + (c.audioType === 'video' ? 'Voir la vidéo' : 'Écouter') + '</button>';
     if (c.pdfId) x += '<button type="button" class="btn secondary small" data-a="compPdf" data-p="' + c.id + '">Paroles</button>';
-    if (c.lien) x += '<a class="btn secondary small" style="display:inline-flex;align-items:center;text-decoration:none" href="' + esc(c.lien) + '" target="_blank" rel="noopener">Ouvrir le lien</a>';
+    if (c.lien) x += '<a class="btn secondary small" style="display:inline-flex;align-items:center;text-decoration:none" href="' + esc(c.lien) + '" target="_blank" rel="noopener">' + (/spotify\.com|spotify:/i.test(c.lien) ? 'Ouvrir dans Spotify' : /youtu/i.test(c.lien) ? 'Ouvrir sur YouTube' : 'Ouvrir le lien') + '</a>';
     x += '</div><div id="pl-' + c.id + '"></div></div>';
     return x;
   }
@@ -416,7 +418,7 @@ function compSheet(c) {
   h += '<label for="cper">Période ou thème (facultatif)</label><input type="text" id="cper" value="' + esc(c ? c.periode : '') + '" placeholder="Ex. : Période 2, automne">';
   h += '<label>Niveaux</label><div class="row wrap">';
   ['PS', 'MS', 'GS'].forEach(function (x) { h += '<button type="button" class="chip' + (n.indexOf(x) >= 0 ? ' on' : '') + '" data-a="cLevel" data-p="' + x + '">' + x + '</button>'; });
-  h += '</div><label for="clien">Lien (YouTube ou autre)</label><input type="text" id="clien" inputmode="url" value="' + esc(c ? c.lien : '') + '" placeholder="https://…">';
+  h += '</div><label for="clien">Lien (Spotify, YouTube ou autre)</label><input type="text" id="clien" inputmode="url" value="' + esc(c ? c.lien : '') + '" placeholder="https://…">';
   h += '<label for="caud">Fichier audio ou vidéo (MP3, MP4…)</label>' + (c && c.audioId ? '<p class="small muted">Fichier actuel : ' + esc(c.audioName || 'fichier') + ' <label class="row" style="font-weight:500;display:inline-flex"><input type="checkbox" id="cdelaud"> retirer</label></p>' : '') + '<input type="file" id="caud" accept="audio/*,video/*,.mp3,.mp4,.m4a">';
   h += '<label for="cpdf">Paroles (PDF)</label>' + (c && c.pdfId ? '<p class="small muted">Fichier actuel : ' + esc(c.pdfName || 'paroles.pdf') + ' <label class="row" style="font-weight:500;display:inline-flex"><input type="checkbox" id="cdelpdf"> retirer</label></p>' : '') + '<input type="file" id="cpdf" accept="application/pdf,.pdf">';
   h += '<label for="cnotes">Notes</label><textarea id="cnotes" style="min-height:70px">' + esc(c ? c.notes : '') + '</textarea>';
@@ -790,7 +792,7 @@ function act(a, p, q) {
 function compSave(id) {
   var titre = ($('#ctitre').value || '').trim() || 'Sans titre', c = id ? findComp(id) : null;
   if (!c) { c = { id: uid(), niveaux: [] }; D.comptines.push(c); }
-  c.titre = titre; c.periode = ($('#cper').value || '').trim(); c.lien = ($('#clien').value || '').trim(); c.notes = $('#cnotes').value || ''; c.current = $('#ccur').checked; c.niveaux = (S.cLev || []).slice();
+  c.titre = titre; c.periode = ($('#cper').value || '').trim(); c.lien = ($('#clien').value || '').trim(); if (c.lien && !/^(https?:|spotify:)/i.test(c.lien)) c.lien = 'https://' + c.lien; c.notes = $('#cnotes').value || ''; c.current = $('#ccur').checked; c.niveaux = (S.cLev || []).slice();
   var aud = readFile('caud'), pdf = readFile('cpdf'), jobs = [], msg = $('#cmsg');
   if ($('#cdelaud') && $('#cdelaud').checked && c.audioId) { jobs.push(idbDel(c.audioId)); c.audioId = ''; c.audioName = ''; }
   if ($('#cdelpdf') && $('#cdelpdf').checked && c.pdfId) { jobs.push(idbDel(c.pdfId)); c.pdfId = ''; c.pdfName = ''; }
