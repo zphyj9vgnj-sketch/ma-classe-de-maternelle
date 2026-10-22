@@ -192,10 +192,10 @@ function tJournal() {
   }
   bl.forEach(function (b) {
     var nobj = b.seances.reduce(function (a, s) { return a + s.obj.length; }, 0), col = blockColor(b);
-    h += '<button type="button" class="block" data-a="openBlock" data-p="' + b.id + '" style="border-left-color:' + col + ';background:linear-gradient(90deg,' + col + '18,var(--card) 60%)"><div class="row"><span class="time" style="color:' + col + '">' + esc((b.time || '--:--') + (endTime(b) ? '–' + endTime(b) : '')) + '</span><strong class="grow">' + esc(b.titre || 'Sans titre') + '</strong><span class="muted small">' + (b.duree ? esc(hm(b.duree)) : '') + '</span></div>';
+    h += '<div class="row" style="align-items:stretch;gap:6px;margin:0 0 10px"><button type="button" class="block grow" data-a="openBlock" data-p="' + b.id + '" style="margin:0;border-left-color:' + col + ';background:linear-gradient(90deg,' + col + '18,var(--card) 60%)"><div class="row"><span class="time" style="color:' + col + '">' + esc((b.time || '--:--') + (endTime(b) ? '–' + endTime(b) : '')) + '</span><strong class="grow">' + esc(b.titre || 'Sans titre') + '</strong><span class="muted small">' + (b.duree ? esc(hm(b.duree)) : '') + '</span></div>';
     var sub = []; if (b.seances.length > 1) sub.push(b.seances.length + ' groupes'); if (nobj) sub.push(nobj + ' objectif' + (nobj > 1 ? 's' : ''));
     if (sub.length) h += '<div class="muted small">' + esc(sub.join(' · ')) + '</div>';
-    h += '</button>';
+    h += '</button><button type="button" class="chip" data-a="delBlockList" data-p="' + b.id + '" aria-label="Supprimer ce moment" style="color:var(--danger);border-color:var(--danger);min-width:44px;font-size:18px;border-radius:16px">✕</button></div>';
   });
   h += '<div class="stack" style="margin-top:6px"><button type="button" class="btn" data-a="addBlock">Ajouter un moment</button>';
   h += '<button type="button" class="btn secondary" data-a="tplOpen">Journées types</button>';
@@ -241,18 +241,18 @@ function durChips(kind, cur) {
 function toMin(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
 function fromMin(n) { n = ((n % 1440) + 1440) % 1440; return pad(Math.floor(n / 60)) + ':' + pad(n % 60); }
 function endTime(b) { var t = toMin(b.time); return t != null && b.duree ? fromMin(t + b.duree) : ''; }
-function nextStart(d) {
+function nextStart(d, skip) {
   if (!d) return '';
   var best = null;
-  d.blocks.forEach(function (b) { var t = toMin(b.time); if (t == null) return; var e = t + (b.duree || 0); if (best == null || e > best) best = e; });
+  d.blocks.forEach(function (b) { if (b.id === skip) return; var t = toMin(b.time); if (t == null) return; var e = t + (b.duree || 0); if (best == null || e > best) best = e; });
   return best == null ? '' : fromMin(best);
 }
 function tBlock() {
   var b = curBlock(); if (!b) { S.blockId = null; return tJournal(); }
   var h = '<button type="button" class="link" data-a="backDay">‹ Retour à la journée</button>';
-  h += '<div class="card"><div class="row"><div style="width:130px"><label for="btime" style="margin-top:0">Heure</label><input type="time" id="btime" value="' + esc(b.time) + '" data-bind="b:time"></div><div class="grow"><label for="bduree" style="margin-top:0">Durée (min)</label><input type="number" id="bduree" inputmode="numeric" min="0" value="' + esc(b.duree || '') + '" data-bind="b:duree"></div></div>';
+  h += '<div class="card"><div class="row"><div class="grow"><label for="btime" style="margin-top:0">Début</label><input type="time" id="btime" value="' + esc(b.time) + '" data-bind="b:time"></div><div class="grow"><label for="bfin" style="margin-top:0">Fin</label><input type="time" id="bfin" value="' + esc(endTime(b)) + '" data-bind="b:fin"></div></div><label for="bduree">Durée (minutes)</label><input type="number" id="bduree" inputmode="numeric" min="0" value="' + esc(b.duree || '') + '" data-bind="b:duree">';
   h += '<label>Durée rapide</label>' + durChips('b', b.duree);
-  h += '<p class="hint">Fin du moment : ' + esc(endTime(b) || '—') + '</p>';
+  h += '<p class="hint" id="bhint">Fin du moment : ' + esc(endTime(b) || '—') + '</p>';
   h += '<label for="btitre">Titre du moment</label><input type="text" id="btitre" value="' + esc(b.titre) + '" data-bind="b:titre" placeholder="Ex. : Regroupement, Ateliers, EPS…">';
   h += '<label>Couleur</label><div class="row wrap"><button type="button" class="chip' + (!b.color ? ' on' : '') + '" data-a="bColor" data-p="">Auto</button>';
   PALETTE.forEach(function (c) { h += '<button type="button" class="sw' + (b.color === c ? ' on' : '') + '" style="background:' + c + '" data-a="bColor" data-p="' + c + '" aria-label="Couleur"></button>'; });
@@ -387,7 +387,7 @@ function compSheet(c) {
 function done(c) { return c.entries.reduce(function (a, e) { return a + (e.min || 0); }, 0); }
 var CATC = ['#3b78c9', '#3a9a5b', '#e0792f', '#8a5cc2', '#d65f8e', '#2a9aa0'];
 function tH108() {
-  var h = '<h1>Mes 108 heures</h1><p class="muted">À ton rythme. Les totaux se modifient si tu es à temps partiel.</p>';
+  var h = '<input type="text" data-bind="g:t108" value="' + esc(D.t108 || 'Mes 108 heures') + '" aria-label="Titre de la page" style="font-size:26px;font-weight:700;border:0;background:transparent;padding:6px 0;margin:6px 0 4px"><p class="muted">À ton rythme. Les totaux se modifient si tu es à temps partiel.</p>';
   var T = 0, F = 0;
   D.cats.forEach(function (c) { T += c.total * 60; F += done(c); });
   h += '<div class="card"><div class="row"><strong class="grow">Au total</strong><span>' + esc(hm(F)) + ' sur ' + esc(hm(T)) + '</span></div><div class="bar" style="margin:8px 0"><i style="width:' + Math.min(100, T ? F / T * 100 : 0) + '%"></i></div><div class="muted small">' + (F >= T ? 'Tout est fait.' : 'Il reste ' + esc(hm(T - F)) + '.') + '</div></div>';
@@ -541,13 +541,20 @@ function download(name, text) {
 function bind(key, val, checked) {
   var p = key.split(':');
   if (p[0] === 'd') { dayOf(S.date, true)[p[1]] = val; }
-  else if (p[0] === 'b') { var b = curBlock(); if (b) b[p[1]] = p[1] === 'duree' ? (parseInt(val, 10) || 0) : val; }
+  else if (p[0] === 'b') { var b = curBlock(); if (b) {
+      if (p[1] === 'fin') { var t0 = toMin(b.time), t1 = toMin(val); if (t0 != null && t1 != null) { b.duree = (t1 - t0 + 1440) % 1440; var du = $('#bduree'); if (du) du.value = b.duree || ''; } }
+      else b[p[1]] = p[1] === 'duree' ? (parseInt(val, 10) || 0) : val;
+      if (p[1] !== 'fin') { var bf = $('#bfin'); if (bf) bf.value = endTime(b); }
+      document.querySelectorAll('.chip[data-a="setDur"][data-p="b"]').forEach(function (c) { c.classList.toggle('on', parseInt(c.getAttribute('data-q'), 10) === b.duree); });
+      var ht = $('#bhint'); if (ht) ht.textContent = 'Fin du moment : ' + (endTime(b) || '—');
+    } }
   else if (p[0] === 's') {
     var s = seanceOf(p[1]); if (!s) return;
     if (p[2] === 'label' || p[2] === 'titre' || p[2] === 'kind') s[p[2]] = val;
     else if (p[2] === 'duree') s.duree = parseInt(val, 10) || 0;
     else if (p[2] === 'f') s.f[p[3]] = p[4] === 'c' ? (checked ? '1' : '') : val;
   }
+  else if (p[0] === 'g') { D[p[1]] = val; }
   else if (p[0] === 'c') { var cc = findCat(p[1]); if (cc) cc[p[2]] = val; }
   else if (p[0] === 'f') { D.fields.forEach(function (f) { if (f.id === p[1]) f[p[2]] = val; }); }
   saveSoon();
@@ -566,7 +573,7 @@ function act(a, p, q) {
   else if (a === 'today') { S.date = iso(new Date()); render({ top: true }); }
   else if (a === 'dayLevel') { var d = dayOf(S.date, true), i = d.niveaux.indexOf(p); if (i >= 0) d.niveaux.splice(i, 1); else d.niveaux.push(p); save(); render(); }
   else if (a === 'addBlock') { var d2 = dayOf(S.date, true), b = { id: uid(), time: nextStart(d2), titre: '', duree: 0, color: '', seances: [newSeance()] }; d2.blocks.push(b); save(); S.blockId = b.id; render({ top: true }); }
-  else if (a === 'openBlock') { S.blockId = p; render({ top: true }); }
+  else if (a === 'openBlock') { S.blockId = p; var ob = curBlock(); if (ob && !ob.time) { ob.time = nextStart(dayOf(S.date), ob.id); save(); } render({ top: true }); }
   else if (a === 'backDay') { S.blockId = null; render({ top: true }); }
   else if (a === 'setDur') { var m = parseInt(q, 10), tg = p === 'b' ? curBlock() : bankItem(S.itemId); if (tg) { tg.duree = m; save(); render(); } }
   else if (a === 'bColor') { var bc = curBlock(); if (bc) { bc.color = p; save(); render(); } }
@@ -577,6 +584,8 @@ function act(a, p, q) {
   else if (a === 'rmObj') { var s2 = seanceOf(p); if (s2) { s2.obj.splice(parseInt(q, 10), 1); save(); render(); } }
   else if (a === 'dupBlock') { var b4 = curBlock(), d4 = dayOf(S.date); if (b4 && d4) { var c = clone(b4); c.id = uid(); c.seances.forEach(function (s) { s.id = uid(); }); c.titre = (c.titre || '') + ' (copie)'; d4.blocks.push(c); save(); S.blockId = c.id; render({ top: true }); } }
   else if (a === 'delBlock') { confirmSheet('Supprimer ce moment de la journée ?', 'delBlockOk'); }
+  else if (a === 'delBlockList') { confirmSheet('Supprimer ce moment de la journée ?', 'delBlockListOk', p); }
+  else if (a === 'delBlockListOk') { var dl = dayOf(S.date); if (dl) { dl.blocks = dl.blocks.filter(function (x) { return x.id !== p; }); save(); } closeSheet(); render(); }
   else if (a === 'delBlockOk') { var d5 = dayOf(S.date); if (d5) { d5.blocks = d5.blocks.filter(function (x) { return x.id !== S.blockId; }); save(); } S.blockId = null; closeSheet(); render({ top: true }); }
   else if (a === 'printDay') { $('#print').innerHTML = printHTML(); setTimeout(function () { try { window.print(); } catch (e) { /* ignoré */ } }, 50); }
   else if (a === 'sheetClose') { closeSheet(); }
@@ -746,6 +755,7 @@ document.addEventListener('input', function (ev) {
 document.addEventListener('change', function (ev) {
   var el = ev.target;
   if (el.getAttribute && el.getAttribute('data-a') === 'tdTog') { act('tdTog', el.getAttribute('data-p')); return; }
+  var kb = el.getAttribute && el.getAttribute('data-bind'); if (kb && (el.type === 'time' || el.type === 'number')) { bind(kb, el.value, el.checked); save(); return; }
   if (el.id === 'jump') { if (el.value) { S.date = el.value; S.blockId = null; render({ top: true }); } }
   else if (el.id === 'bdom') { S.bank.dom = el.value; render(); }
   else if (el.id === 'ikind') { /* déjà lié */ }
