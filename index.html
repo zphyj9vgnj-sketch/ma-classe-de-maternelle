@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#2f6f73">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,6 +17,12 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#101a1b; --card:#182526; --ink:#e8f1f0; --muted:#9bb0b1; --accent:#6fc0c4; --accent-ink:#0d1b1c; --soft:#203334; --line:#2b4041; --field:#142021; --danger:#e07b7b; } }
 html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size:16px; line-height:1.45; overflow-x:hidden; overflow-x:clip; }
 *, *::before, *::after { box-sizing:border-box; }
+html, body, button, label, a, input, select, textarea, #view { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.okbar { position:sticky; bottom:-8px; padding:14px 0 8px; margin-top:14px; background:linear-gradient(180deg, transparent, var(--bg) 35%); z-index:2; }
+.okbar .btn { box-shadow:0 6px 18px rgba(20,60,60,.25); }
+.cov { width:76px; height:76px; border-radius:14px; object-fit:cover; flex:none; background:var(--soft); }
+.cov.ph { display:flex; align-items:center; justify-content:center; color:#fff; }
+.cov.ph svg { width:34px; height:34px; }
 #app { height:100%; max-width:560px; margin:0 auto; display:flex; flex-direction:column; position:relative; }
 #view { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; overflow-x:clip; padding:max(14px, calc(env(safe-area-inset-top, 0px) + 10px)) 16px 20px; touch-action:pan-y; }
 h1 { font-size:26px; margin:6px 0 4px; line-height:1.2; }
@@ -379,6 +385,7 @@ function tBlock() {
     h += '<div class="row wrap" style="margin-top:12px"><button type="button" class="btn secondary small" data-a="toBank" data-p="' + s.id + '">Ranger dans ma banque d’ateliers</button></div></div>';
   });
   h += '<div class="stack"><button type="button" class="btn secondary" data-a="addSeance">Ajouter un groupe (autre niveau, ATSEM…)</button><button type="button" class="btn secondary" data-a="fromBank">Prendre un atelier de ma banque</button><button type="button" class="btn secondary" data-a="dupBlock">Dupliquer ce moment</button><button type="button" class="btn secondary" data-a="copyOpen" data-p="block">Copier ce moment vers d’autres jours</button><button type="button" class="btn danger" data-a="delBlock">Supprimer ce moment</button></div>';
+  h += '<div class="okbar"><button type="button" class="btn" data-a="backDay">✓ Valider le moment</button></div>';
   return h;
 }
 
@@ -428,6 +435,7 @@ function tItem() {
   h += '<div class="row"><div class="grow"><label for="ikind">Type</label><select id="ikind" data-bind="s:' + it.id + ':kind"><option value="atelier"' + (it.kind === 'atelier' ? ' selected' : '') + '>Atelier</option><option value="rituel"' + (it.kind === 'rituel' ? ' selected' : '') + '>Rituel</option></select></div><div style="width:120px"><label for="iduree">Durée (min)</label><input type="number" id="iduree" inputmode="numeric" min="0" data-bind="s:' + it.id + ':duree" value="' + esc(it.duree || '') + '"></div></div>' + durChips('i', it.duree) + '</div>';
   h += '<div class="seance">' + levelsHTML(it) + objHTML(it) + fieldsHTML(it) + '</div>';
   h += '<div class="stack"><button type="button" class="btn" data-a="itemUse">Ajouter au cahier journal</button><button type="button" class="btn secondary" data-a="itemDup">Dupliquer</button><button type="button" class="btn danger" data-a="itemDel">Supprimer</button></div>';
+  h += '<div class="okbar"><button type="button" class="btn" data-a="backBank">✓ Valider</button></div>';
   return h;
 }
 
@@ -497,6 +505,7 @@ function tEleve() {
     h += '<div class="card"><div class="row"><span class="muted small grow">' + esc(fmtShort(n.date)) + '</span><button type="button" class="link" style="color:var(--danger)" data-a="nDel" data-p="' + n.id + '">Supprimer</button></div><textarea data-bind="n:' + e.id + ':' + n.id + '" aria-label="Note" placeholder="Ce que tu veux noter…">' + esc(n.txt) + '</textarea></div>';
   });
   h += '<button type="button" class="btn danger" style="margin-top:10px" data-a="eDel">Supprimer cet élève</button>';
+  h += '<div class="okbar"><button type="button" class="btn" data-a="eBack">✓ Valider</button></div>';
   return h;
 }
 
@@ -550,7 +559,7 @@ function tComp() {
   var h = '<div class="mo">Chants et comptines</div><h1 style="margin:2px 0 6px">Comptines du moment</h1><p class="muted">Un fichier audio ou vidéo, un lien, et les paroles en PDF.</p>';
   var cur = D.comptines.filter(function (c) { return c.current; }), oth = D.comptines.filter(function (c) { return !c.current; });
   function card(c) {
-    var x = '<div class="card" style="border-left:6px solid var(--accent)"><div class="row"><h2 class="grow" style="margin:0">' + esc(c.titre || 'Sans titre') + '</h2><button type="button" class="link" data-a="compEdit" data-p="' + c.id + '">Modifier</button></div>';
+    var x = '<div class="card"><div class="row" style="align-items:flex-start;gap:12px">' + coverHTML(c) + '<div class="grow" style="min-width:0"><div class="row"><h2 class="grow" style="margin:0">' + esc(c.titre || 'Sans titre') + '</h2><button type="button" class="link" data-a="compEdit" data-p="' + c.id + '">Modifier</button></div>';
     var tg = ''; if (c.periode) tg += '<span class="tag">' + esc(c.periode) + '</span>'; (c.niveaux || []).forEach(function (n) { tg += '<span class="tag">' + n + '</span>'; });
     if (tg) x += '<div style="margin-top:6px">' + tg + '</div>';
     if (c.notes) x += '<p class="muted small" style="white-space:pre-wrap">' + esc(c.notes) + '</p>';
@@ -558,7 +567,7 @@ function tComp() {
     if (c.audioId) x += '<button type="button" class="btn secondary small" data-a="compPlay" data-p="' + c.id + '">' + (c.audioType === 'video' ? 'Voir la vidéo' : 'Écouter') + '</button>';
     if (c.pdfId) x += '<button type="button" class="btn secondary small" data-a="compPdf" data-p="' + c.id + '">Paroles</button>';
     if (c.lien) x += '<a class="btn secondary small" style="display:inline-flex;align-items:center;text-decoration:none" href="' + esc(c.lien) + '" target="_blank" rel="noopener">' + (/spotify\.com|spotify:/i.test(c.lien) ? 'Ouvrir dans Spotify' : /youtu/i.test(c.lien) ? 'Ouvrir sur YouTube' : 'Ouvrir le lien') + '</a>';
-    x += '</div><div id="pl-' + c.id + '"></div></div>';
+    x += '</div></div></div><div id="pl-' + c.id + '"></div></div>';
     return x;
   }
   if (cur.length) { h += '<h3>En ce moment</h3>'; cur.forEach(function (c) { h += card(c); }); }
@@ -566,6 +575,23 @@ function tComp() {
   if (!D.comptines.length) h += '<div class="card"><p>Aucune comptine pour l’instant.</p></div>';
   h += '<button type="button" class="btn" style="margin-top:6px" data-a="compNew">Ajouter une comptine</button><p class="hint">Les fichiers restent sur ce téléphone et ne sont pas inclus dans la sauvegarde.</p>';
   return h;
+}
+function ytId(u) { var m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/.exec(u || ''); return m ? m[1] : ''; }
+function srcKind(u) { return /spotify/i.test(u || '') ? 'sp' : /youtu/i.test(u || '') ? 'yt' : ''; }
+var PLAYSVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"/></svg>';
+var NOTESVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
+function coverHTML(c) {
+  var k = srcKind(c.lien), img = c.img || (k === 'yt' && ytId(c.lien) ? 'https://img.youtube.com/vi/' + ytId(c.lien) + '/hqdefault.jpg' : '');
+  var bg = k === 'sp' ? '#1db954' : k === 'yt' ? '#e0262f' : 'var(--accent)', icon = k === 'yt' ? PLAYSVG : NOTESVG;
+  var ph = '<div class="cov ph" style="background:' + bg + '">' + icon + '</div>';
+  if (!img) return ph;
+  return '<img class="cov" src="' + esc(img) + '" alt="" onerror="this.outerHTML=this.getAttribute(\'data-ph\')" data-ph="' + esc(ph) + '">';
+}
+function ensureThumb(c) {
+  if (c.img || srcKind(c.lien) !== 'sp' || c.imgTried === c.lien) return Promise.resolve(false);
+  c.imgTried = c.lien;
+  var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ctl) ctl.abort(); }, 6000);
+  return fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(c.lien), ctl ? { signal: ctl.signal } : {}).then(function (r) { return r.json(); }).then(function (j) { clearTimeout(to); if (j && j.thumbnail_url) { c.img = j.thumbnail_url; save(); return true; } save(); return false; }).catch(function () { clearTimeout(to); save(); return false; });
 }
 function compSheet(c) {
   var n = c ? c.niveaux || [] : ['PS', 'MS', 'GS'];
@@ -728,6 +754,7 @@ function render(opt) {
   v.innerHTML = html;
   document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-p') === S.tab); });
   if (top) v.scrollTop = 0;
+  if (S.tab === 'comp') D.comptines.forEach(function (c) { ensureThumb(c).then(function (ch) { if (ch && S.tab === 'comp' && !$('#sheet').classList.contains('open')) render(); }); });
 }
 function download(name, text) {
   try {
@@ -990,7 +1017,7 @@ function act(a, p, q) {
 function compSave(id) {
   var titre = ($('#ctitre').value || '').trim() || 'Sans titre', c = id ? findComp(id) : null;
   if (!c) { c = { id: uid(), niveaux: [] }; D.comptines.push(c); }
-  c.titre = titre; c.periode = ($('#cper').value || '').trim(); c.lien = ($('#clien').value || '').trim(); if (c.lien && !/^(https?:|spotify:)/i.test(c.lien)) c.lien = 'https://' + c.lien; c.notes = $('#cnotes').value || ''; c.current = $('#ccur').checked; c.niveaux = (S.cLev || []).slice();
+  var oldL = c.lien; c.titre = titre; c.periode = ($('#cper').value || '').trim(); c.lien = ($('#clien').value || '').trim(); if (c.lien && !/^(https?:|spotify:)/i.test(c.lien)) c.lien = 'https://' + c.lien; if (oldL !== c.lien) { c.img = ''; c.imgTried = ''; } c.notes = $('#cnotes').value || ''; c.current = $('#ccur').checked; c.niveaux = (S.cLev || []).slice();
   var aud = readFile('caud'), pdf = readFile('cpdf'), jobs = [], msg = $('#cmsg');
   if ($('#cdelaud') && $('#cdelaud').checked && c.audioId) { jobs.push(idbDel(c.audioId)); c.audioId = ''; c.audioName = ''; }
   if ($('#cdelpdf') && $('#cdelpdf').checked && c.pdfId) { jobs.push(idbDel(c.pdfId)); c.pdfId = ''; c.pdfName = ''; }
@@ -1039,6 +1066,7 @@ document.addEventListener('change', function (ev) {
     fr.readAsText(el.files[0]); el.value = '';
   }
 });
+['gesturestart', 'gesturechange', 'gestureend'].forEach(function (g) { document.addEventListener(g, function (e) { e.preventDefault(); }); });
 window.addEventListener('beforeunload', save);
 document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
 (function () { var v = $('#view'); function fix() { if (v.scrollLeft) v.scrollLeft = 0; if (document.documentElement.scrollLeft) document.documentElement.scrollLeft = 0; if (document.body.scrollLeft) document.body.scrollLeft = 0; } v.addEventListener('scroll', fix, { passive: true }); window.addEventListener('scroll', fix, { passive: true }); })();
