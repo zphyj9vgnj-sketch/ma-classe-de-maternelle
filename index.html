@@ -103,6 +103,11 @@ textarea { min-height:96px; resize:vertical; }
 .todo input[type=checkbox] { -webkit-appearance:none; appearance:none; width:26px; height:26px; border-radius:50%; border:2px solid var(--line); background:var(--field); margin-top:0; cursor:pointer; flex:none; }
 .todo input[type=checkbox]:checked { background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/70% no-repeat; border-color:var(--accent); }
 .bar { height:12px; }
+.mv { display:flex; flex-direction:column; gap:2px; flex:none; }
+.mv button, .grip { appearance:none; border:0; background:var(--soft); color:var(--muted); border-radius:8px; cursor:pointer; font:inherit; }
+.mv button { width:34px; height:22px; font-size:11px; padding:0; }
+.grip { width:34px; align-self:stretch; font-size:18px; letter-spacing:-3px; touch-action:none; cursor:grab; }
+.todo.drag { position:relative; z-index:5; box-shadow:0 10px 28px rgba(0,0,0,.25); opacity:.95; }
 .block { box-shadow:var(--sh); border-top:0; border-right:0; border-bottom:0; border-radius:16px; }
 .pct { font-size:30px; font-weight:800; line-height:1; }
 .fcard { background:var(--card); border-radius:16px; padding:10px 12px; margin:0 0 8px; border:1px solid var(--line); }
@@ -442,9 +447,17 @@ function tItem() {
 /* ---------- À faire ---------- */
 function tagOf(id) { for (var i = 0; i < TAGS.length; i++) if (TAGS[i][0] === id) return TAGS[i]; return TAGS[0]; }
 function folderName(id) { for (var i = 0; i < D.todoFolders.length; i++) if (D.todoFolders[i].id === id) return D.todoFolders[i].nom; return ''; }
+var ESTS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180];
+function estOptions(sel) { var h = '<option value="0">Pas d’estimation</option>'; ESTS.forEach(function (m) { h += '<option value="' + m + '"' + (sel === m ? ' selected' : '') + '>' + esc(hm(m)) + '</option>'; }); return h; }
+function openVisible() { var inF = function (t) { return !S.tdFolder || t.folder === S.tdFolder; }; return D.todo.filter(function (t) { return !t.done && inF(t); }); }
+function reorderVisible(ids) {
+  var cur = openVisible(), pos = cur.map(function (t) { return D.todo.indexOf(t); }), byId = {};
+  cur.forEach(function (t) { byId[t.id] = t; });
+  ids.forEach(function (id, k) { if (byId[id]) D.todo[pos[k]] = byId[id]; });
+}
 function todoRow(t) {
-  var tg = tagOf(t.tag);
-  return '<div class="todo" style="border-left-color:' + tg[2] + '"><input type="checkbox" data-a="tdTog" data-p="' + t.id + '"' + (t.done ? ' checked' : '') + ' aria-label="Terminé"><button type="button" class="grow" data-a="tdEdit" data-p="' + t.id + '" style="all:unset;flex:1;cursor:pointer;min-width:0"><div class="' + (t.done ? 'done' : '') + '">' + esc(t.t) + '</div><div class="muted small"><i class="dot" style="background:' + tg[2] + '"></i>' + esc(tg[1]) + (t.folder && !S.tdFolder ? ' · ' + esc(folderName(t.folder)) : '') + (t.date ? ' · ' + esc(fmtShort(t.date)) : '') + '</div></button></div>';
+  var tg = tagOf(t.tag), today = iso(new Date()), late = t.date && t.date < today && !t.done;
+  return '<div class="todo" style="border-left-color:' + tg[2] + '"><input type="checkbox" data-a="tdTog" data-p="' + t.id + '"' + (t.done ? ' checked' : '') + ' aria-label="Terminé"><button type="button" class="grow" data-a="tdEdit" data-p="' + t.id + '" style="all:unset;flex:1;cursor:pointer;min-width:0"><div class="' + (t.done ? 'done' : '') + '">' + esc(t.t) + '</div><div class="muted small"><i class="dot" style="background:' + tg[2] + '"></i>' + esc(tg[1]) + (t.folder && !S.tdFolder ? ' · ' + esc(folderName(t.folder)) : '') + (t.date ? ' · <span style="' + (late ? 'color:var(--danger);font-weight:600' : '') + '">' + esc(fmtShort(t.date)) + '</span>' : '') + (t.est ? ' · ⏱ ' + esc(hm(t.est)) : '') + '</div></button>' + (t.done ? '' : '<div class="mv"><button type="button" data-a="tdMove" data-p="' + t.id + '" data-q="-1" aria-label="Monter">▲</button><button type="button" data-a="tdMove" data-p="' + t.id + '" data-q="1" aria-label="Descendre">▼</button></div><button type="button" class="grip" data-grip="' + t.id + '" aria-label="Glisser pour changer l’ordre">⋮⋮</button>') + '</div>';
 }
 function tTodo() {
   var today = iso(new Date());
@@ -455,17 +468,15 @@ function tTodo() {
   if (S.tdFolder) h += '<div style="margin:-4px 0 8px"><button type="button" class="link" data-a="tdFolderEdit" data-p="' + esc(S.tdFolder) + '">Renommer ou supprimer ce dossier</button></div>';
   h += '<div class="card"><input type="text" id="tdnew" placeholder="Une chose à faire…" aria-label="Nouvelle tâche"><div class="row wrap" style="margin:10px 0">';
   TAGS.forEach(function (t) { h += '<button type="button" class="chip' + (S.tdTag === t[0] ? ' on' : '') + '" data-a="tdTag" data-p="' + t[0] + '" style="' + (S.tdTag === t[0] ? 'background:' + t[2] + ';border-color:' + t[2] + ';color:#fff' : 'border-color:' + t[2]) + '">' + esc(t[1]) + '</button>'; });
-  h += '</div><div class="row"><input type="date" id="tddate" aria-label="Date (facultatif)" style="width:170px"><button type="button" class="btn grow" data-a="tdAdd">Ajouter</button></div></div>';
+  h += '</div><div class="row"><div class="grow"><select id="tdest" aria-label="Temps estimé">' + estOptions(S.tdEst || 0) + '</select></div><input type="date" id="tddate" aria-label="Date (facultatif)" style="width:150px"></div><button type="button" class="btn" style="margin-top:10px" data-a="tdAdd">Ajouter à la liste</button></div>';
   var inF = function (t) { return !S.tdFolder || t.folder === S.tdFolder; };
   var open = D.todo.filter(function (t) { return !t.done && inF(t); }), done = D.todo.filter(function (t) { return t.done && inF(t); });
-  var groups = [['En retard', function (t) { return t.date && t.date < today; }], ['Aujourd’hui', function (t) { return t.date === today; }], ['À venir', function (t) { return t.date && t.date > today; }], ['Sans date', function (t) { return !t.date; }]];
-  var any = false;
-  groups.forEach(function (g) {
-    var l = open.filter(g[1]).sort(function (a, b) { return (a.date || '') < (b.date || '') ? -1 : 1; });
-    if (!l.length) return; any = true;
-    h += '<div class="sec">' + g[0] + ' · ' + l.length + '</div>'; l.forEach(function (t) { h += todoRow(t); });
-  });
-  if (!any) h += '<p class="muted" style="text-align:center">Rien à faire pour l’instant.</p>';
+  var tot = open.reduce(function (a, t) { return a + (t.est || 0); }, 0);
+  if (open.length) {
+    h += '<div class="sec">Par ordre de priorité · ' + open.length + (tot ? ' · ' + esc(hm(tot)) + ' estimées' : '') + '</div><p class="hint" style="margin:-4px 2px 8px">Change l’ordre avec ▲ ▼ ou en faisant glisser ⋮⋮</p><div id="tdlist">';
+    open.forEach(function (t) { h += todoRow(t); });
+    h += '</div>';
+  } else h += '<p class="muted" style="text-align:center">Rien à faire pour l’instant.</p>';
   if (done.length) {
     h += '<div class="row" style="margin-top:12px"><button type="button" class="link grow" style="text-align:left" data-a="tdShow">' + (S.showDone ? 'Cacher' : 'Voir') + ' les tâches terminées (' + done.length + ')</button>' + (S.showDone ? '<button type="button" class="link" data-a="tdClear">Effacer</button>' : '') + '</div>';
     if (S.showDone) done.forEach(function (t) { h += todoRow(t); });
@@ -940,8 +951,9 @@ function act(a, p, q) {
   else if (a === 'tdFolderEdit') { var fo = D.todoFolders.filter(function (f) { return f.id === p; })[0]; if (fo) formSheet('Dossier', '<label for="fdn">Nom du dossier</label><input type="text" id="fdn" value="' + esc(fo.nom) + '">', 'Enregistrer', 'tdFolderSave', p, '<button type="button" class="btn danger" data-a="tdFolderDel" data-p="' + p + '">Supprimer le dossier (les tâches restent)</button>'); }
   else if (a === 'tdFolderSave') { var nm3 = ($('#fdn').value || '').trim() || 'Dossier'; if (p) { D.todoFolders.forEach(function (f) { if (f.id === p) f.nom = nm3; }); } else { var nf = { id: uid(), nom: nm3 }; D.todoFolders.push(nf); S.tdFolder = nf.id; } save(); closeSheet(); render(); }
   else if (a === 'tdFolderDel') { D.todoFolders = D.todoFolders.filter(function (f) { return f.id !== p; }); D.todo.forEach(function (t) { if (t.folder === p) t.folder = ''; }); S.tdFolder = ''; save(); closeSheet(); render(); }
-  else if (a === 'tdTag') { S.tdTag = p; var txt = $('#tdnew').value, dd2 = $('#tddate').value; render(); $('#tdnew').value = txt; $('#tddate').value = dd2; }
-  else if (a === 'tdAdd') { var tx = ($('#tdnew').value || '').trim(); if (!tx) return; D.todo.push({ id: uid(), folder: S.tdFolder || '', t: tx, date: $('#tddate').value || '', tag: S.tdTag, done: false }); save(); render(); $('#tdnew').focus(); }
+  else if (a === 'tdMove') { var ids = openVisible().map(function (t) { return t.id; }), ix = ids.indexOf(p), ny = ix + parseInt(q, 10); if (ix >= 0 && ny >= 0 && ny < ids.length) { var tmp = ids[ix]; ids[ix] = ids[ny]; ids[ny] = tmp; reorderVisible(ids); save(); render(); } }
+  else if (a === 'tdTag') { S.tdTag = p; S.tdEst = parseInt($('#tdest').value, 10) || 0; var txt = $('#tdnew').value, dd2 = $('#tddate').value; render(); $('#tdnew').value = txt; $('#tddate').value = dd2; }
+  else if (a === 'tdAdd') { var tx = ($('#tdnew').value || '').trim(); if (!tx) return; D.todo.push({ id: uid(), est: parseInt($('#tdest').value, 10) || 0, folder: S.tdFolder || '', t: tx, date: $('#tddate').value || '', tag: S.tdTag, done: false }); save(); render(); $('#tdnew').focus(); }
   else if (a === 'tdTog') { D.todo.forEach(function (t) { if (t.id === p) t.done = !t.done; }); save(); render(); }
   else if (a === 'tdShow') { S.showDone = !S.showDone; render(); }
   else if (a === 'tdClear') { confirmSheet('Effacer toutes les tâches terminées ?', 'tdClearOk'); }
@@ -949,10 +961,10 @@ function act(a, p, q) {
   else if (a === 'tdEdit') {
     var t0 = D.todo.filter(function (t) { return t.id === p; })[0]; if (!t0) return; S.sheet = { tag: t0.tag };
     var tg = ''; TAGS.forEach(function (t) { tg += '<button type="button" class="chip' + (t0.tag === t[0] ? ' on' : '') + '" data-a="tdEditTag" data-p="' + t[0] + '">' + esc(t[1]) + '</button>'; });
-    formSheet('Modifier la tâche', '<label for="tdt">Tâche</label><input type="text" id="tdt" value="' + esc(t0.t) + '"><label>Catégorie</label><div class="row wrap" id="tdtags">' + tg + '</div><label for="tdd">Date</label><input type="date" id="tdd" value="' + esc(t0.date) + '"><label for="tdf">Dossier</label><select id="tdf"><option value="">Aucun</option>' + D.todoFolders.map(function (f) { return '<option value="' + f.id + '"' + (t0.folder === f.id ? ' selected' : '') + '>' + esc(f.nom) + '</option>'; }).join('') + '</select>', 'Enregistrer', 'tdSave', p, '<button type="button" class="btn danger" data-a="tdDel" data-p="' + p + '">Supprimer</button>');
+    formSheet('Modifier la tâche', '<label for="tdt">Tâche</label><input type="text" id="tdt" value="' + esc(t0.t) + '"><label>Catégorie</label><div class="row wrap" id="tdtags">' + tg + '</div><label for="tdd">Date</label><input type="date" id="tdd" value="' + esc(t0.date) + '"><label for="tde">Temps estimé</label><select id="tde">' + estOptions(t0.est || 0) + '</select><label for="tdf">Dossier</label><select id="tdf"><option value="">Aucun</option>' + D.todoFolders.map(function (f) { return '<option value="' + f.id + '"' + (t0.folder === f.id ? ' selected' : '') + '>' + esc(f.nom) + '</option>'; }).join('') + '</select>', 'Enregistrer', 'tdSave', p, '<button type="button" class="btn danger" data-a="tdDel" data-p="' + p + '">Supprimer</button>');
   }
   else if (a === 'tdEditTag') { S.sheet.tag = p; document.querySelectorAll('#tdtags .chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-p') === p); }); }
-  else if (a === 'tdSave') { D.todo.forEach(function (t) { if (t.id === p) { t.t = ($('#tdt').value || '').trim() || t.t; t.date = $('#tdd').value || ''; t.folder = $('#tdf').value; t.tag = (S.sheet && S.sheet.tag) || t.tag; } }); save(); closeSheet(); render(); }
+  else if (a === 'tdSave') { D.todo.forEach(function (t) { if (t.id === p) { t.t = ($('#tdt').value || '').trim() || t.t; t.date = $('#tdd').value || ''; t.folder = $('#tdf').value; t.est = parseInt($('#tde').value, 10) || 0; t.tag = (S.sheet && S.sheet.tag) || t.tag; } }); save(); closeSheet(); render(); }
   else if (a === 'tdDel') { D.todo = D.todo.filter(function (t) { return t.id !== p; }); save(); closeSheet(); render(); }
   /* comptines */
   else if (a === 'compNew') { S.cLev = ['PS', 'MS', 'GS']; openSheet(compSheet(null)); }
@@ -1067,6 +1079,26 @@ document.addEventListener('change', function (ev) {
   }
 });
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (g) { document.addEventListener(g, function (e) { e.preventDefault(); }); });
+document.addEventListener('pointerdown', function (ev) {
+  var g = ev.target.closest && ev.target.closest('[data-grip]'); if (!g) return;
+  var row = g.closest('.todo'), list = $('#tdlist'); if (!row || !list) return;
+  ev.preventDefault();
+  var rows = Array.prototype.slice.call(list.querySelectorAll('.todo')), rects = rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; });
+  var from = rows.indexOf(row), y0 = ev.clientY, to = from;
+  row.classList.add('drag'); try { g.setPointerCapture(ev.pointerId); } catch (e) { /* ignoré */ }
+  function mv(e) {
+    var dy = e.clientY - y0; row.style.transform = 'translateY(' + dy + 'px)';
+    var c = rects[from] + dy; to = 0; for (var i = 0; i < rects.length; i++) { if (c > rects[i]) to = i; } if (c <= rects[0]) to = 0;
+    rows.forEach(function (r, i) { if (r === row) return; var sh = 0; if (from < to && i > from && i <= to) sh = -1; if (from > to && i < from && i >= to) sh = 1; r.style.transform = sh ? 'translateY(' + (sh * (row.offsetHeight + 8)) + 'px)' : ''; r.style.transition = 'transform .12s'; });
+    var v = $('#view'), vb = v.getBoundingClientRect(); if (e.clientY < vb.top + 60) v.scrollTop -= 10; else if (e.clientY > vb.bottom - 60) v.scrollTop += 10;
+  }
+  function up() {
+    g.removeEventListener('pointermove', mv); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    if (to !== from) { var ids = rows.map(function (r) { return r.querySelector('[data-grip]').getAttribute('data-grip'); }); var id = ids.splice(from, 1)[0]; ids.splice(to, 0, id); reorderVisible(ids); save(); }
+    render();
+  }
+  g.addEventListener('pointermove', mv); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+});
 window.addEventListener('beforeunload', save);
 document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
 (function () { var v = $('#view'); function fix() { if (v.scrollLeft) v.scrollLeft = 0; if (document.documentElement.scrollLeft) document.documentElement.scrollLeft = 0; if (document.body.scrollLeft) document.body.scrollLeft = 0; } v.addEventListener('scroll', fix, { passive: true }); window.addEventListener('scroll', fix, { passive: true }); })();
