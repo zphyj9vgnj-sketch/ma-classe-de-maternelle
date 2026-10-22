@@ -213,6 +213,7 @@ function fixData() {
     D.mig3 = true;
   }
   D.fields.forEach(function (f) { delete f.req; });
+  D.todo.forEach(function (t) { if (typeof t.est === 'number') t.est = t.est ? hm(t.est) : ''; });
   D.v = 2;
 }
 function load() {
@@ -448,7 +449,15 @@ function tItem() {
 function tagOf(id) { for (var i = 0; i < TAGS.length; i++) if (TAGS[i][0] === id) return TAGS[i]; return TAGS[0]; }
 function folderName(id) { for (var i = 0; i < D.todoFolders.length; i++) if (D.todoFolders[i].id === id) return D.todoFolders[i].nom; return ''; }
 var ESTS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180];
-function estOptions(sel) { var h = '<option value="0">Pas d’estimation</option>'; ESTS.forEach(function (m) { h += '<option value="' + m + '"' + (sel === m ? ' selected' : '') + '>' + esc(hm(m)) + '</option>'; }); return h; }
+var ESTQ = ['15 min', '30 min', '1 h', '2 h', '1 jour', '2 jours', '1 semaine'];
+function estQuick(target) { var h = '<div class="row wrap" style="margin:6px 0 0;gap:6px">'; ESTQ.forEach(function (v) { h += '<button type="button" class="chip" style="min-height:34px;font-size:13.5px;padding:0 10px" data-a="estSet" data-p="' + v + '" data-q="' + target + '">' + v + '</button>'; }); return h + '</div>'; }
+function estParse(txt) {
+  var r = { min: 0, jours: 0, ok: false }, t = String(txt || '').toLowerCase().replace(',', '.');
+  var re = /(\d+(?:\.\d+)?)\s*(semaines?|sem|jours?|j|heures?|h|minutes?|min|mn)\b/g, m;
+  while ((m = re.exec(t))) { var n = parseFloat(m[1]), u = m[2]; r.ok = true; if (/^sem/.test(u)) r.jours += n * 5; else if (/^j/.test(u)) r.jours += n; else if (/^h/.test(u)) r.min += n * 60; else r.min += n; }
+  return r;
+}
+function estTotal(list) { var mi = 0, jo = 0; list.forEach(function (t) { var r = estParse(t.est); mi += r.min; jo += r.jours; }); var p = []; if (jo) p.push((Math.round(jo * 10) / 10 + '').replace('.', ',') + ' jour' + (jo > 1 ? 's' : '')); if (mi) p.push(hm(mi)); return p.join(' + '); }
 function openVisible() { var inF = function (t) { return !S.tdFolder || t.folder === S.tdFolder; }; return D.todo.filter(function (t) { return !t.done && inF(t); }); }
 function reorderVisible(ids) {
   var cur = openVisible(), pos = cur.map(function (t) { return D.todo.indexOf(t); }), byId = {};
@@ -457,7 +466,7 @@ function reorderVisible(ids) {
 }
 function todoRow(t) {
   var tg = tagOf(t.tag), today = iso(new Date()), late = t.date && t.date < today && !t.done;
-  return '<div class="todo" style="border-left-color:' + tg[2] + '"><input type="checkbox" data-a="tdTog" data-p="' + t.id + '"' + (t.done ? ' checked' : '') + ' aria-label="Terminé"><button type="button" class="grow" data-a="tdEdit" data-p="' + t.id + '" style="all:unset;flex:1;cursor:pointer;min-width:0"><div class="' + (t.done ? 'done' : '') + '">' + esc(t.t) + '</div><div class="muted small"><i class="dot" style="background:' + tg[2] + '"></i>' + esc(tg[1]) + (t.folder && !S.tdFolder ? ' · ' + esc(folderName(t.folder)) : '') + (t.date ? ' · <span style="' + (late ? 'color:var(--danger);font-weight:600' : '') + '">' + esc(fmtShort(t.date)) + '</span>' : '') + (t.est ? ' · ⏱ ' + esc(hm(t.est)) : '') + '</div></button>' + (t.done ? '' : '<div class="mv"><button type="button" data-a="tdMove" data-p="' + t.id + '" data-q="-1" aria-label="Monter">▲</button><button type="button" data-a="tdMove" data-p="' + t.id + '" data-q="1" aria-label="Descendre">▼</button></div><button type="button" class="grip" data-grip="' + t.id + '" aria-label="Glisser pour changer l’ordre">⋮⋮</button>') + '</div>';
+  return '<div class="todo" style="border-left-color:' + tg[2] + '"><input type="checkbox" data-a="tdTog" data-p="' + t.id + '"' + (t.done ? ' checked' : '') + ' aria-label="Terminé"><button type="button" class="grow" data-a="tdEdit" data-p="' + t.id + '" style="all:unset;flex:1;cursor:pointer;min-width:0"><div class="' + (t.done ? 'done' : '') + '">' + esc(t.t) + '</div><div class="muted small"><i class="dot" style="background:' + tg[2] + '"></i>' + esc(tg[1]) + (t.folder && !S.tdFolder ? ' · ' + esc(folderName(t.folder)) : '') + (t.date ? ' · <span style="' + (late ? 'color:var(--danger);font-weight:600' : '') + '">' + esc(fmtShort(t.date)) + '</span>' : '') + (t.est ? ' · ⏱ ' + esc(t.est) : '') + '</div></button>' + (t.done ? '' : '<div class="mv"><button type="button" data-a="tdMove" data-p="' + t.id + '" data-q="-1" aria-label="Monter">▲</button><button type="button" data-a="tdMove" data-p="' + t.id + '" data-q="1" aria-label="Descendre">▼</button></div><button type="button" class="grip" data-grip="' + t.id + '" aria-label="Glisser pour changer l’ordre">⋮⋮</button>') + '</div>';
 }
 function tTodo() {
   var today = iso(new Date());
@@ -468,12 +477,12 @@ function tTodo() {
   if (S.tdFolder) h += '<div style="margin:-4px 0 8px"><button type="button" class="link" data-a="tdFolderEdit" data-p="' + esc(S.tdFolder) + '">Renommer ou supprimer ce dossier</button></div>';
   h += '<div class="card"><input type="text" id="tdnew" placeholder="Une chose à faire…" aria-label="Nouvelle tâche"><div class="row wrap" style="margin:10px 0">';
   TAGS.forEach(function (t) { h += '<button type="button" class="chip' + (S.tdTag === t[0] ? ' on' : '') + '" data-a="tdTag" data-p="' + t[0] + '" style="' + (S.tdTag === t[0] ? 'background:' + t[2] + ';border-color:' + t[2] + ';color:#fff' : 'border-color:' + t[2]) + '">' + esc(t[1]) + '</button>'; });
-  h += '</div><div class="row"><div class="grow"><select id="tdest" aria-label="Temps estimé">' + estOptions(S.tdEst || 0) + '</select></div><input type="date" id="tddate" aria-label="Date (facultatif)" style="width:150px"></div><button type="button" class="btn" style="margin-top:10px" data-a="tdAdd">Ajouter à la liste</button></div>';
+  h += '</div><label for="tdest" style="margin-top:0">Temps estimé (facultatif)</label><input type="text" id="tdest" placeholder="Écris ce que tu veux : 20 min, 2 jours…" value="' + esc(S.tdEst || '') + '">' + estQuick('tdest') + '<label for="tddate">Date (facultatif)</label><input type="date" id="tddate"><button type="button" class="btn" style="margin-top:10px" data-a="tdAdd">Ajouter à la liste</button></div>';
   var inF = function (t) { return !S.tdFolder || t.folder === S.tdFolder; };
   var open = D.todo.filter(function (t) { return !t.done && inF(t); }), done = D.todo.filter(function (t) { return t.done && inF(t); });
-  var tot = open.reduce(function (a, t) { return a + (t.est || 0); }, 0);
+  var tot = estTotal(open);
   if (open.length) {
-    h += '<div class="sec">Par ordre de priorité · ' + open.length + (tot ? ' · ' + esc(hm(tot)) + ' estimées' : '') + '</div><p class="hint" style="margin:-4px 2px 8px">Change l’ordre avec ▲ ▼ ou en faisant glisser ⋮⋮</p><div id="tdlist">';
+    h += '<div class="sec">Par ordre de priorité · ' + open.length + (tot ? ' · ' + esc(tot) + ' estimés' : '') + '</div><p class="hint" style="margin:-4px 2px 8px">Change l’ordre avec ▲ ▼ ou en faisant glisser ⋮⋮</p><div id="tdlist">';
     open.forEach(function (t) { h += todoRow(t); });
     h += '</div>';
   } else h += '<p class="muted" style="text-align:center">Rien à faire pour l’instant.</p>';
@@ -951,9 +960,10 @@ function act(a, p, q) {
   else if (a === 'tdFolderEdit') { var fo = D.todoFolders.filter(function (f) { return f.id === p; })[0]; if (fo) formSheet('Dossier', '<label for="fdn">Nom du dossier</label><input type="text" id="fdn" value="' + esc(fo.nom) + '">', 'Enregistrer', 'tdFolderSave', p, '<button type="button" class="btn danger" data-a="tdFolderDel" data-p="' + p + '">Supprimer le dossier (les tâches restent)</button>'); }
   else if (a === 'tdFolderSave') { var nm3 = ($('#fdn').value || '').trim() || 'Dossier'; if (p) { D.todoFolders.forEach(function (f) { if (f.id === p) f.nom = nm3; }); } else { var nf = { id: uid(), nom: nm3 }; D.todoFolders.push(nf); S.tdFolder = nf.id; } save(); closeSheet(); render(); }
   else if (a === 'tdFolderDel') { D.todoFolders = D.todoFolders.filter(function (f) { return f.id !== p; }); D.todo.forEach(function (t) { if (t.folder === p) t.folder = ''; }); S.tdFolder = ''; save(); closeSheet(); render(); }
+  else if (a === 'estSet') { var ei = document.getElementById(q); if (ei) { ei.value = p; if (q === 'tdest') S.tdEst = p; } }
   else if (a === 'tdMove') { var ids = openVisible().map(function (t) { return t.id; }), ix = ids.indexOf(p), ny = ix + parseInt(q, 10); if (ix >= 0 && ny >= 0 && ny < ids.length) { var tmp = ids[ix]; ids[ix] = ids[ny]; ids[ny] = tmp; reorderVisible(ids); save(); render(); } }
-  else if (a === 'tdTag') { S.tdTag = p; S.tdEst = parseInt($('#tdest').value, 10) || 0; var txt = $('#tdnew').value, dd2 = $('#tddate').value; render(); $('#tdnew').value = txt; $('#tddate').value = dd2; }
-  else if (a === 'tdAdd') { var tx = ($('#tdnew').value || '').trim(); if (!tx) return; D.todo.push({ id: uid(), est: parseInt($('#tdest').value, 10) || 0, folder: S.tdFolder || '', t: tx, date: $('#tddate').value || '', tag: S.tdTag, done: false }); save(); render(); $('#tdnew').focus(); }
+  else if (a === 'tdTag') { S.tdTag = p; S.tdEst = $('#tdest').value; var txt = $('#tdnew').value, dd2 = $('#tddate').value; render(); $('#tdnew').value = txt; $('#tddate').value = dd2; }
+  else if (a === 'tdAdd') { var tx = ($('#tdnew').value || '').trim(); if (!tx) return; D.todo.push({ id: uid(), est: ($('#tdest').value || '').trim(), folder: S.tdFolder || '', t: tx, date: $('#tddate').value || '', tag: S.tdTag, done: false }); save(); render(); $('#tdnew').focus(); }
   else if (a === 'tdTog') { D.todo.forEach(function (t) { if (t.id === p) t.done = !t.done; }); save(); render(); }
   else if (a === 'tdShow') { S.showDone = !S.showDone; render(); }
   else if (a === 'tdClear') { confirmSheet('Effacer toutes les tâches terminées ?', 'tdClearOk'); }
@@ -961,10 +971,10 @@ function act(a, p, q) {
   else if (a === 'tdEdit') {
     var t0 = D.todo.filter(function (t) { return t.id === p; })[0]; if (!t0) return; S.sheet = { tag: t0.tag };
     var tg = ''; TAGS.forEach(function (t) { tg += '<button type="button" class="chip' + (t0.tag === t[0] ? ' on' : '') + '" data-a="tdEditTag" data-p="' + t[0] + '">' + esc(t[1]) + '</button>'; });
-    formSheet('Modifier la tâche', '<label for="tdt">Tâche</label><input type="text" id="tdt" value="' + esc(t0.t) + '"><label>Catégorie</label><div class="row wrap" id="tdtags">' + tg + '</div><label for="tdd">Date</label><input type="date" id="tdd" value="' + esc(t0.date) + '"><label for="tde">Temps estimé</label><select id="tde">' + estOptions(t0.est || 0) + '</select><label for="tdf">Dossier</label><select id="tdf"><option value="">Aucun</option>' + D.todoFolders.map(function (f) { return '<option value="' + f.id + '"' + (t0.folder === f.id ? ' selected' : '') + '>' + esc(f.nom) + '</option>'; }).join('') + '</select>', 'Enregistrer', 'tdSave', p, '<button type="button" class="btn danger" data-a="tdDel" data-p="' + p + '">Supprimer</button>');
+    formSheet('Modifier la tâche', '<label for="tdt">Tâche</label><input type="text" id="tdt" value="' + esc(t0.t) + '"><label>Catégorie</label><div class="row wrap" id="tdtags">' + tg + '</div><label for="tdd">Date</label><input type="date" id="tdd" value="' + esc(t0.date) + '"><label for="tde">Temps estimé</label><input type="text" id="tde" value="' + esc(t0.est || '') + '" placeholder="Ex. : 30 min, 2 jours…">' + estQuick('tde') + '<label for="tdf">Dossier</label><select id="tdf"><option value="">Aucun</option>' + D.todoFolders.map(function (f) { return '<option value="' + f.id + '"' + (t0.folder === f.id ? ' selected' : '') + '>' + esc(f.nom) + '</option>'; }).join('') + '</select>', 'Enregistrer', 'tdSave', p, '<button type="button" class="btn danger" data-a="tdDel" data-p="' + p + '">Supprimer</button>');
   }
   else if (a === 'tdEditTag') { S.sheet.tag = p; document.querySelectorAll('#tdtags .chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-p') === p); }); }
-  else if (a === 'tdSave') { D.todo.forEach(function (t) { if (t.id === p) { t.t = ($('#tdt').value || '').trim() || t.t; t.date = $('#tdd').value || ''; t.folder = $('#tdf').value; t.est = parseInt($('#tde').value, 10) || 0; t.tag = (S.sheet && S.sheet.tag) || t.tag; } }); save(); closeSheet(); render(); }
+  else if (a === 'tdSave') { D.todo.forEach(function (t) { if (t.id === p) { t.t = ($('#tdt').value || '').trim() || t.t; t.date = $('#tdd').value || ''; t.folder = $('#tdf').value; t.est = ($('#tde').value || '').trim(); t.tag = (S.sheet && S.sheet.tag) || t.tag; } }); save(); closeSheet(); render(); }
   else if (a === 'tdDel') { D.todo = D.todo.filter(function (t) { return t.id !== p; }); save(); closeSheet(); render(); }
   /* comptines */
   else if (a === 'compNew') { S.cLev = ['PS', 'MS', 'GS']; openSheet(compSheet(null)); }
