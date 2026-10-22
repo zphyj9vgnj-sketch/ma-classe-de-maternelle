@@ -34,7 +34,7 @@ p { margin:0 0 8px; }
 .link { appearance:none; background:none; border:0; color:var(--accent); font:inherit; text-decoration:underline; padding:8px 4px; cursor:pointer; }
 .chip { appearance:none; border:1.5px solid var(--line); background:var(--field); color:var(--ink); border-radius:999px; font:inherit; font-size:15px; min-height:40px; padding:0 14px; cursor:pointer; }
 .chip.on { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
-.tag { display:inline-block; background:var(--soft); border-radius:10px; padding:3px 9px; font-size:13px; margin:0 6px 6px 0; border-left:5px solid var(--accent); }
+.tag { display:inline-block; background:var(--soft); border-radius:10px; padding:3px 9px; font-size:13px; margin:0 6px 6px 0;  }
 .dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; vertical-align:-1px; flex:none; }
 label { display:block; font-weight:600; font-size:15px; margin:12px 0 4px; }
 input[type=text], input[type=number], input[type=date], input[type=time], input[type=search], textarea, select { width:100%; border:1.5px solid var(--line); border-radius:14px; background:var(--field); color:var(--ink); font:inherit; font-size:16px; padding:12px; }
@@ -51,7 +51,7 @@ textarea { min-height:96px; resize:vertical; }
 .card { box-shadow:var(--sh); border-radius:20px; }
 .btn { box-shadow:0 1px 2px rgba(0,0,0,.08); }
 .hd { display:flex; align-items:flex-end; gap:10px; margin:2px 0 12px; }
-.hd .mo { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.mo { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600; }
 .hd h1 { margin:0; font-size:27px; }
 .hd h1::first-letter { text-transform:uppercase; }
 .ib { appearance:none; border:0; background:var(--card); box-shadow:var(--sh); color:var(--accent); width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; font:inherit; }
@@ -89,6 +89,17 @@ textarea { min-height:96px; resize:vertical; }
 .sec { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700; margin:18px 2px 8px; }
 .more { appearance:none; border:1.5px dashed var(--line); background:none; border-radius:14px; font:inherit; font-weight:600; color:var(--accent); width:100%; min-height:46px; margin-top:12px; cursor:pointer; }
 .banner { border-radius:20px; padding:16px; margin:0 0 12px; color:#fff; }
+.seg { display:flex; background:var(--soft); border-radius:15px; padding:4px; gap:2px; margin:0 0 12px; }
+.seg button { flex:1; min-width:0; appearance:none; border:0; background:none; min-height:42px; border-radius:12px; font:inherit; font-size:15px; font-weight:600; color:var(--muted); cursor:pointer; padding:0 6px; }
+.seg button.on { background:var(--card); color:var(--accent); box-shadow:var(--sh); }
+.ghost { border:0 !important; background:transparent !important; padding:4px 0 !important; min-height:0 !important; resize:none; overflow:hidden; }
+.todo { border:0; box-shadow:var(--sh); border-radius:16px; border-left:6px solid; padding:12px 12px; }
+.todo input[type=checkbox] { -webkit-appearance:none; appearance:none; width:26px; height:26px; border-radius:50%; border:2px solid var(--line); background:var(--field); margin-top:0; cursor:pointer; flex:none; }
+.todo input[type=checkbox]:checked { background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/70% no-repeat; border-color:var(--accent); }
+.bar { height:12px; }
+.block { box-shadow:var(--sh); border-top:0; border-right:0; border-bottom:0; border-radius:16px; }
+.pct { font-size:30px; font-weight:800; line-height:1; }
+.fcard { background:var(--card); border-radius:16px; padding:10px 12px; margin:0 0 8px; border:1px solid var(--line); }
 #nav button.on svg { background:var(--soft); box-sizing:content-box; padding:3px 14px; border-radius:999px; }
 #nav { box-shadow:0 -4px 18px rgba(20,60,60,.06); }
 #nav { display:flex; border-top:1px solid var(--line); background:var(--card); padding-bottom:env(safe-area-inset-bottom, 0px); }
@@ -225,7 +236,7 @@ function seanceOf(sid) { var b = curBlock(); if (b) for (var i = 0; i < b.seance
 function newSeance() { return { id: uid(), label: '', niveaux: [], obj: [], f: {} }; }
 function sortedBlocks(d) { return d.blocks.slice().sort(function (a, b) { return (a.time || '99:99') < (b.time || '99:99') ? -1 : 1; }); }
 function blockColor(b) { if (b.color) return b.color; for (var i = 0; i < b.seances.length; i++) if (b.seances[i].obj.length) return domColor(b.seances[i].obj[0].d); return '#2f6f73'; }
-function tagHTML(o) { return '<span class="tag" style="border-left-color:' + domColor(o.d) + '">' + esc(o.s) + (o.g && o.g !== 'Objectif d’apprentissage' ? ' › ' + esc(o.g) : '') + '</span>'; }
+function tagHTML(o) { return '<span class="tag"><i class="dot" style="background:' + domColor(o.d) + '"></i>' + esc(o.s) + (o.g && o.g !== 'Objectif d’apprentissage' ? ' › ' + esc(o.g) : '') + '</span>'; }
 
 /* ---------- Journal ---------- */
 var PRESETS = [['Accueil', 20, '#e0792f'], ['Regroupement', 20, '#8a5cc2'], ['Ateliers', 45, '#3b78c9'], ['Récréation', 20, '#3a9a5b'], ['Motricité / EPS', 30, '#2a9aa0'], ['Langage', 20, '#c99a14'], ['Collation', 15, '#d65f8e'], ['Rangement', 10, '#6b7a80'], ['Cantine', 60, '#6b7a80'], ['Sieste', 90, '#6b7a80']];
@@ -386,24 +397,23 @@ function bankListHTML() {
   var list = bankFiltered(), h = '';
   if (!list.length) return '<div class="card"><p>' + (D.bank.length ? 'Rien ne correspond à ces filtres.' : 'Ta banque est vide pour l’instant.') + '</p><p class="muted small">Crée un ' + (S.bank.kind === 'rituel' ? 'rituel' : 'atelier') + ' ici, ou range-en un depuis ton cahier journal avec « Ranger dans ma banque d’ateliers ».</p></div>';
   list.forEach(function (it) {
-    var col = it.obj.length ? domColor(it.obj[0].d) : '#6b7a80';
-    var doms = []; it.obj.forEach(function (o) { if (doms.indexOf(o.d) < 0) doms.push(o.d); });
-    h += '<button type="button" class="block" data-a="openItem" data-p="' + it.id + '" style="border-left-color:' + col + ';background:linear-gradient(90deg,' + col + '18,var(--card) 60%)"><div class="row"><strong class="grow">' + esc(it.titre || 'Sans titre') + '</strong><span class="muted small">' + (it.duree ? esc(hm(it.duree)) : '') + '</span></div><div class="row wrap small" style="margin-top:4px">';
-    it.niveaux.forEach(function (n) { h += '<span class="tag">' + n + '</span>'; });
-    doms.forEach(function (d) { h += '<span class="muted"><i class="dot" style="background:' + domColor(d) + '"></i>' + esc(d.length > 34 ? d.slice(0, 32) + '…' : d) + '</span> '; });
-    h += '</div></button>';
+    var col = it.obj.length ? domColor(it.obj[0].d) : '#6b7a80', seen = [];
+    it.obj.forEach(function (o) { if (seen.indexOf(o.s) < 0) seen.push(o.s); });
+    var tags = ''; seen.slice(0, 2).forEach(function (n) { tags += '<span>' + esc(n) + '</span>'; }); if (seen.length > 2) tags += '<span>+' + (seen.length - 2) + '</span>';
+    h += '<button type="button" class="mcard" data-a="openItem" data-p="' + it.id + '" style="width:100%;margin:0 0 10px"><span class="mt" style="border-right-color:' + col + ';background:' + col + '22"><b style="color:' + col + ';font-size:15px">' + esc(it.niveaux.length ? it.niveaux.join('/') : '—') + '</b>' + (it.duree ? '<span>' + esc(hm(it.duree)) + '</span>' : '') + '</span><span class="mb"><strong>' + esc(it.titre || 'Sans titre') + '</strong>' + (tags ? '<span class="tg">' + tags + '</span>' : '') + '</span></button>';
   });
   return h;
 }
 function tBank() {
   if (S.itemId) return tItem();
   var f = S.bank;
-  var seg = '<div class="row" style="margin:6px 0 10px"><button type="button" class="chip grow' + (S.resTab === 'ateliers' ? ' on' : '') + '" data-a="resTab" data-p="ateliers">Ateliers et rituels</button><button type="button" class="chip grow' + (S.resTab === 'lib' ? ' on' : '') + '" data-a="resTab" data-p="lib">Bibliothèque</button></div>';
-  if (S.resTab === 'lib') return '<h1>Réserve</h1>' + seg + tLib();
-  var h = '<h1>Réserve</h1>' + seg + '<p class="muted">Tes ateliers et rituels, pour ne pas tout réécrire.</p>';
-  h += '<div class="row wrap" style="margin:8px 0"><button type="button" class="chip' + (f.kind === 'atelier' ? ' on' : '') + '" data-a="bKind" data-p="atelier">Ateliers</button><button type="button" class="chip' + (f.kind === 'rituel' ? ' on' : '') + '" data-a="bKind" data-p="rituel">Rituels</button></div>';
-  h += '<div class="row wrap" style="margin:0 0 8px">';
-  [['', 'Tous niveaux'], ['PS', 'PS'], ['MS', 'MS'], ['GS', 'GS']].forEach(function (n) { h += '<button type="button" class="chip' + (f.niv === n[0] ? ' on' : '') + '" data-a="bNiv" data-p="' + n[0] + '">' + n[1] + '</button>'; });
+  var seg = '<div class="seg"><button type="button" class="' + (S.resTab === 'ateliers' ? 'on' : '') + '" data-a="resTab" data-p="ateliers">Ateliers et rituels</button><button type="button" class="' + (S.resTab === 'lib' ? 'on' : '') + '" data-a="resTab" data-p="lib">Bibliothèque</button></div>';
+  var hd0 = '<div class="mo">Ateliers et documents</div><h1 style="margin:2px 0 12px">Réserve</h1>';
+  if (S.resTab === 'lib') return hd0 + seg + tLib();
+  var h = hd0 + seg;
+  h += '<div class="seg"><button type="button" class="' + (f.kind === 'atelier' ? 'on' : '') + '" data-a="bKind" data-p="atelier">Ateliers</button><button type="button" class="' + (f.kind === 'rituel' ? 'on' : '') + '" data-a="bKind" data-p="rituel">Rituels</button></div>';
+  h += '<div class="seg">';
+  [['', 'Tous'], ['PS', 'PS'], ['MS', 'MS'], ['GS', 'GS']].forEach(function (n) { h += '<button type="button" class="' + (f.niv === n[0] ? 'on' : '') + '" data-a="bNiv" data-p="' + n[0] + '">' + n[1] + '</button>'; });
   h += '</div><select id="bdom" aria-label="Domaine"><option value="">Tous les domaines</option>';
   PROG.forEach(function (d) { h += '<option value="' + esc(d.nom) + '"' + (f.dom === d.nom ? ' selected' : '') + '>' + esc(d.nom) + '</option>'; });
   h += '</select><div style="margin:8px 0 12px"><input type="search" id="bq" placeholder="Chercher par titre" value="' + esc(f.q) + '"></div>';
@@ -430,7 +440,7 @@ function todoRow(t) {
 }
 function tTodo() {
   var today = iso(new Date());
-  var h = '<h1>À faire</h1>';
+  var h = '<div class="mo">Organisation</div><h1 style="margin:2px 0 12px">À faire</h1>';
   h += '<div class="row wrap" style="margin:6px 0 10px"><button type="button" class="chip' + (!S.tdFolder ? ' on' : '') + '" data-a="tdFolder" data-p="">Tous</button>';
   D.todoFolders.forEach(function (f) { var n = D.todo.filter(function (t) { return t.folder === f.id && !t.done; }).length; h += '<button type="button" class="chip' + (S.tdFolder === f.id ? ' on' : '') + '" data-a="tdFolder" data-p="' + f.id + '">' + esc(f.nom) + (n ? ' (' + n + ')' : '') + '</button>'; });
   h += '<button type="button" class="chip" data-a="tdFolderNew">+ Dossier</button></div>';
@@ -445,7 +455,7 @@ function tTodo() {
   groups.forEach(function (g) {
     var l = open.filter(g[1]).sort(function (a, b) { return (a.date || '') < (b.date || '') ? -1 : 1; });
     if (!l.length) return; any = true;
-    h += '<h3>' + g[0] + ' (' + l.length + ')</h3>'; l.forEach(function (t) { h += todoRow(t); });
+    h += '<div class="sec">' + g[0] + ' · ' + l.length + '</div>'; l.forEach(function (t) { h += todoRow(t); });
   });
   if (!any) h += '<p class="muted" style="text-align:center">Rien à faire pour l’instant.</p>';
   if (done.length) {
@@ -469,9 +479,9 @@ function elevesListHTML() {
 }
 function tEleves() {
   if (S.eleveId) return tEleve();
-  var h = '<h1>Élèves</h1><p class="muted">Un prénom, et tes notes libres.</p><p class="hint" style="margin:0 0 10px">Par protection, écris seulement des prénoms ou des initiales.</p>';
-  h += '<div class="row wrap" style="margin:0 0 8px">';
-  [['', 'Tous'], ['PS', 'PS'], ['MS', 'MS'], ['GS', 'GS']].forEach(function (n) { h += '<button type="button" class="chip' + (S.eNiv === n[0] ? ' on' : '') + '" data-a="eNiv" data-p="' + n[0] + '">' + n[1] + '</button>'; });
+  var h = '<div class="mo">Ma classe</div><h1 style="margin:2px 0 6px">Élèves</h1><p class="muted">Un prénom, et tes notes libres.</p><p class="hint" style="margin:0 0 10px">Par protection, écris seulement des prénoms ou des initiales.</p>';
+  h += '<div class="seg">';
+  [['', 'Tous'], ['PS', 'PS'], ['MS', 'MS'], ['GS', 'GS']].forEach(function (n) { h += '<button type="button" class="' + (S.eNiv === n[0] ? 'on' : '') + '" data-a="eNiv" data-p="' + n[0] + '">' + n[1] + '</button>'; });
   h += '</div><div style="margin:0 0 12px"><input type="search" id="eqq" placeholder="Chercher un prénom" value="' + esc(S.eq) + '"></div><div id="elist">' + elevesListHTML() + '</div>';
   h += '<button type="button" class="btn" style="margin-top:6px" data-a="eNew">Ajouter un élève</button>';
   return h;
@@ -537,10 +547,10 @@ function libImport(files) {
 }
 /* ---------- Comptines ---------- */
 function tComp() {
-  var h = '<h1>Comptines du moment</h1><p class="muted">Un fichier audio ou vidéo, un lien, et les paroles en PDF.</p>';
+  var h = '<div class="mo">Chants et comptines</div><h1 style="margin:2px 0 6px">Comptines du moment</h1><p class="muted">Un fichier audio ou vidéo, un lien, et les paroles en PDF.</p>';
   var cur = D.comptines.filter(function (c) { return c.current; }), oth = D.comptines.filter(function (c) { return !c.current; });
   function card(c) {
-    var x = '<div class="card"><div class="row"><h2 class="grow" style="margin:0">' + esc(c.titre || 'Sans titre') + '</h2><button type="button" class="link" data-a="compEdit" data-p="' + c.id + '">Modifier</button></div>';
+    var x = '<div class="card" style="border-left:6px solid var(--accent)"><div class="row"><h2 class="grow" style="margin:0">' + esc(c.titre || 'Sans titre') + '</h2><button type="button" class="link" data-a="compEdit" data-p="' + c.id + '">Modifier</button></div>';
     var tg = ''; if (c.periode) tg += '<span class="tag">' + esc(c.periode) + '</span>'; (c.niveaux || []).forEach(function (n) { tg += '<span class="tag">' + n + '</span>'; });
     if (tg) x += '<div style="margin-top:6px">' + tg + '</div>';
     if (c.notes) x += '<p class="muted small" style="white-space:pre-wrap">' + esc(c.notes) + '</p>';
@@ -577,13 +587,13 @@ function compSheet(c) {
 function done(c) { return c.entries.reduce(function (a, e) { return a + (e.min || 0); }, 0); }
 var CATC = ['#3b78c9', '#3a9a5b', '#e0792f', '#8a5cc2', '#d65f8e', '#2a9aa0'];
 function tH108() {
-  var h = '<input type="text" data-bind="g:t108" value="' + esc(D.t108 || 'Mes 108 heures') + '" aria-label="Titre de la page" style="font-size:26px;font-weight:700;border:0;background:transparent;padding:6px 0;margin:6px 0 4px"><input type="text" data-bind="g:t108sub" value="' + esc(D.t108sub != null ? D.t108sub : 'À ton rythme. Les totaux se modifient si tu es à temps partiel.') + '" aria-label="Sous-titre" style="border:0;background:transparent;padding:4px 0;color:var(--muted)">';
+  var h = '<div class="mo">Temps de travail</div><input type="text" data-bind="g:t108" value="' + esc(D.t108 || 'Mes 108 heures') + '" aria-label="Titre de la page" style="font-size:26px;font-weight:700;border:0;background:transparent;padding:6px 0;margin:6px 0 4px"><textarea rows="2" data-bind="g:t108sub" aria-label="Sous-titre" class="ghost" style="color:var(--muted);font-size:14px;margin-bottom:6px">' + esc(D.t108sub != null ? D.t108sub : 'À ton rythme. Les totaux se modifient si tu es à temps partiel.') + '</textarea>';
   var T = 0, F = 0;
   D.cats.forEach(function (c) { T += c.total * 60; F += done(c); });
-  h += '<div class="card"><div class="row"><input type="text" class="grow" data-bind="g:t108tot" value="' + esc(D.t108tot != null ? D.t108tot : 'Au total') + '" aria-label="Titre du total" style="font-weight:700;border:0;background:transparent;padding:4px 0"><span>' + esc(hm(F)) + ' sur ' + esc(hm(T)) + '</span></div><div class="bar" style="margin:8px 0"><i style="width:' + Math.min(100, T ? F / T * 100 : 0) + '%"></i></div><div class="muted small">' + (F >= T ? 'Tout est fait.' : 'Il reste ' + esc(hm(T - F)) + '.') + '</div></div>';
+  h += '<div class="card"><div class="row" style="align-items:flex-end"><div class="pct" style="color:var(--accent)">' + Math.round(Math.min(100, T ? F / T * 100 : 0)) + '%</div><input type="text" class="grow ghost" data-bind="g:t108tot" value="' + esc(D.t108tot != null ? D.t108tot : 'Au total') + '" aria-label="Titre du total" style="font-weight:700;margin-left:6px"><span>' + esc(hm(F)) + ' sur ' + esc(hm(T)) + '</span></div><div class="bar" style="margin:8px 0"><i style="width:' + Math.min(100, T ? F / T * 100 : 0) + '%"></i></div><div class="muted small">' + (F >= T ? 'Tout est fait.' : 'Il reste ' + esc(hm(T - F)) + '.') + '</div></div>';
   D.cats.forEach(function (c, ci) {
     var f = done(c), tot = c.total * 60, col = CATC[ci % CATC.length];
-    h += '<div class="card" style="border-left:8px solid ' + col + '"><input type="text" data-bind="c:' + c.id + ':nom" value="' + esc(c.nom) + '" aria-label="Nom de la catégorie" style="font-size:18px;font-weight:700;margin-bottom:8px"><div class="row"><span class="grow">' + esc(hm(f)) + ' sur ' + esc(hm(tot)) + '</span><span class="muted small">' + (f >= tot ? 'complet' : 'reste ' + esc(hm(tot - f))) + '</span></div><div class="bar" style="margin:8px 0 10px"><i style="width:' + Math.min(100, tot ? f / tot * 100 : 0) + '%;background:' + col + '"></i></div>';
+    h += '<div class="card" style="border-left:8px solid ' + col + '"><textarea rows="2" class="ghost" data-bind="c:' + c.id + ':nom" aria-label="Nom de la catégorie" style="font-size:17px;font-weight:700;margin-bottom:6px;line-height:1.3">' + esc(c.nom) + '</textarea><div class="row"><span class="grow">' + esc(hm(f)) + ' sur ' + esc(hm(tot)) + '</span><span class="muted small">' + (f >= tot ? 'complet' : 'reste ' + esc(hm(tot - f))) + '</span></div><div class="bar" style="margin:8px 0 10px"><i style="width:' + Math.min(100, tot ? f / tot * 100 : 0) + '%;background:' + col + '"></i></div>';
     var en = c.entries.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     en.forEach(function (e) { h += '<button type="button" class="block" data-a="entryEdit" data-p="' + c.id + '" data-q="' + e.id + '" style="padding:10px 12px;border-left-color:' + col + '"><div class="row"><strong>' + esc(fmtShort(e.date)) + '</strong><span class="grow">' + esc(hm(e.min)) + '</span></div>' + (e.note ? '<div class="muted small">' + esc(e.note) + '</div>' : '') + '</button>'; });
     h += '<div class="row wrap"><button type="button" class="btn small" data-a="entryAdd" data-p="' + c.id + '" style="background:' + col + ';color:#fff">Ajouter des heures</button><button type="button" class="link" data-a="catEdit" data-p="' + c.id + '">Modifier</button></div></div>';
@@ -594,10 +604,10 @@ function tH108() {
 
 /* ---------- Réglages ---------- */
 function tReglages() {
-  var h = '<h1>Réglages</h1>';
+  var h = '<div class="mo">Personnalisation</div><h1 style="margin:2px 0 12px">Réglages</h1>';
   h += '<div class="card"><h2>Champs (cahier journal et ateliers)</h2><p class="muted small">Tous les champs se renomment, se cachent ou se suppriment (✕), et tu peux en ajouter. Les champs cachés gardent leur contenu.</p>';
   D.fields.forEach(function (f) {
-    h += '<div class="row" style="margin-bottom:8px"><button type="button" class="chip' + (f.on ? ' on' : '') + '" ' + 'data-a="fToggle" data-p="' + f.id + '" aria-label="' + (f.on ? 'Cacher' : 'Afficher') + ' ' + esc(f.label) + '">' + (f.on ? 'Oui' : 'Non') + '</button><input type="text" class="grow" data-bind="f:' + f.id + ':label" value="' + esc(f.label) + '" aria-label="Nom du champ"><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="-1" aria-label="Monter">↑</button><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="1" aria-label="Descendre">↓</button>' + ('<button type="button" class="chip" data-a="fDel" data-p="' + f.id + '" aria-label="Supprimer le champ" style="color:var(--danger)">✕</button>') + '</div>';
+    h += '<div class="fcard"><input type="text" data-bind="f:' + f.id + ':label" value="' + esc(f.label) + '" aria-label="Nom du champ" style="font-weight:600"><div class="row" style="margin-top:8px"><button type="button" class="chip' + (f.on ? ' on' : '') + '" data-a="fToggle" data-p="' + f.id + '">' + (f.on ? 'Affiché' : 'Caché') + '</button><span class="grow"></span><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="-1" aria-label="Monter">↑</button><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="1" aria-label="Descendre">↓</button><button type="button" class="chip" data-a="fDel" data-p="' + f.id + '" aria-label="Supprimer le champ" style="color:var(--danger)">✕</button></div></div>';
   });
   h += '<button type="button" class="btn secondary" data-a="fAdd">Ajouter un champ</button></div>';
   h += '<div class="card"><h2>Sauvegarde</h2><p class="muted small">Tout reste sur ce téléphone. Crée un fichier de sauvegarde pour changer de téléphone ou garder une copie. Les fichiers (comptines, documents de la bibliothèque) ne sont pas inclus.</p><div class="stack"><button type="button" class="btn secondary" data-a="export">Créer ma sauvegarde</button><label class="btn secondary" for="imp" style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer">Retrouver ma sauvegarde</label><input type="file" id="imp" accept=".json,application/json,text/plain" style="display:none"></div>' + (S.msg ? '<p class="small" role="status" style="margin-top:8px">' + esc(S.msg) + '</p>' : '') + '</div>';
