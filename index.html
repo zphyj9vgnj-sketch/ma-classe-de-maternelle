@@ -46,6 +46,51 @@ textarea { min-height:96px; resize:vertical; }
 .block .time { font-weight:700; font-size:15px; }
 #view, #sheet .panel { scrollbar-width:none; -ms-overflow-style:none; }
 #view::-webkit-scrollbar, #sheet .panel::-webkit-scrollbar { display:none; width:0; height:0; }
+
+:root { --sh:0 1px 2px rgba(20,50,50,.05), 0 8px 22px rgba(20,60,60,.07); }
+.card { box-shadow:var(--sh); border-radius:20px; }
+.btn { box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.hd { display:flex; align-items:flex-end; gap:10px; margin:2px 0 12px; }
+.hd .mo { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.hd h1 { margin:0; font-size:27px; }
+.hd h1::first-letter { text-transform:uppercase; }
+.ib { appearance:none; border:0; background:var(--card); box-shadow:var(--sh); color:var(--accent); width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; font:inherit; }
+.ib svg { width:22px; height:22px; }
+.wk { display:flex; align-items:center; gap:4px; margin:0 0 12px; }
+.wk .nv { appearance:none; border:0; background:none; color:var(--muted); font-size:22px; width:26px; height:44px; padding:0; cursor:pointer; }
+.wd { flex:1; min-width:0; appearance:none; border:0; background:var(--card); box-shadow:var(--sh); border-radius:16px; padding:7px 0 6px; display:flex; flex-direction:column; align-items:center; gap:1px; font:inherit; color:var(--ink); cursor:pointer; position:relative; }
+.wd small { font-size:11px; color:var(--muted); text-transform:uppercase; }
+.wd b { font-size:17px; }
+.wd.we { opacity:.55; }
+.wd.on { background:var(--accent); color:var(--accent-ink); opacity:1; }
+.wd.on small { color:var(--accent-ink); opacity:.85; }
+.wd.td:not(.on) b { color:var(--accent); }
+.wd i { width:6px; height:6px; border-radius:50%; background:var(--accent); position:absolute; bottom:4px; }
+.wd.on i { background:var(--accent-ink); }
+.lv { display:flex; align-items:center; gap:6px; margin:0 0 14px; }
+.lv .chip { min-height:34px; padding:0 12px; font-size:14px; }
+.mrow { display:flex; align-items:stretch; gap:8px; margin:0 0 10px; }
+.mcard { display:flex; flex:1; min-width:0; text-align:left; background:var(--card); border:0; border-radius:18px; padding:0; font:inherit; color:var(--ink); box-shadow:var(--sh); overflow:hidden; cursor:pointer; }
+.mt { width:66px; flex:none; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:10px 4px; border-right:4px solid; }
+.mt b { font-size:16px; } .mt span { font-size:12px; color:var(--muted); }
+.mb { flex:1; min-width:0; padding:11px 8px 11px 12px; }
+.mb strong { display:block; font-size:16px; }
+.mb .tg { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+.mb .tg span { font-size:12px; background:var(--soft); border-radius:8px; padding:2px 7px; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dur { align-self:center; font-size:12.5px; color:var(--muted); padding-right:12px; white-space:nowrap; }
+.xb { appearance:none; border:0; background:var(--card); box-shadow:var(--sh); color:var(--danger); width:42px; border-radius:16px; font-size:17px; cursor:pointer; flex:none; }
+.qa { display:flex; flex-wrap:wrap; gap:8px; }
+.qa button { appearance:none; border:0; border-radius:999px; font:inherit; font-size:14.5px; font-weight:600; padding:0 14px; min-height:40px; color:#fff; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.12); }
+.tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+.tile { appearance:none; border:0; background:var(--card); box-shadow:var(--sh); border-radius:18px; padding:14px 10px; display:flex; flex-direction:column; align-items:center; gap:6px; font:inherit; font-size:14.5px; font-weight:600; color:var(--ink); text-align:center; cursor:pointer; min-height:84px; justify-content:center; }
+.tile svg { width:24px; height:24px; color:var(--accent); }
+.empty { text-align:center; padding:22px 14px 14px; }
+.empty svg { width:64px; height:64px; color:var(--accent); opacity:.85; }
+.sec { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700; margin:18px 2px 8px; }
+.more { appearance:none; border:1.5px dashed var(--line); background:none; border-radius:14px; font:inherit; font-weight:600; color:var(--accent); width:100%; min-height:46px; margin-top:12px; cursor:pointer; }
+.banner { border-radius:20px; padding:16px; margin:0 0 12px; color:#fff; }
+#nav button.on svg { background:var(--soft); box-sizing:content-box; padding:3px 14px; border-radius:999px; }
+#nav { box-shadow:0 -4px 18px rgba(20,60,60,.06); }
 #nav { display:flex; border-top:1px solid var(--line); background:var(--card); padding-bottom:env(safe-area-inset-bottom, 0px); }
 #nav button { flex:1; min-width:0; background:none; border:0; font:inherit; font-size:10.5px; color:var(--muted); padding:9px 0 7px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; }
 #nav button.on { color:var(--accent); font-weight:700; }
@@ -171,7 +216,7 @@ function idbPut(id, blob) { return idb().then(function (db) { return new Promise
 function idbGet(id) { return idb().then(function (db) { return new Promise(function (res, rej) { var q = db.transaction('f').objectStore('f').get(id); q.onsuccess = function () { res(q.result); }; q.onerror = function () { rej(q.error); }; }); }); }
 function idbDel(id) { return idb().then(function (db) { return new Promise(function (res) { var t = db.transaction('f', 'readwrite'); t.objectStore('f').delete(id); t.oncomplete = res; t.onerror = res; }); }).catch(function () {}); }
 
-var S = { tab: 'journal', date: iso(new Date()), blockId: null, itemId: null, msg: '', pick: null, sheet: null, bank: { kind: 'atelier', niv: '', dom: '', q: '' }, tdTag: 'classe', tdFolder: '', eleveId: null, resTab: 'ateliers', libFolder: '', eq: '', eNiv: '', showDone: false, copySel: {}, copyMode: null, urls: {} };
+var S = { tab: 'journal', date: iso(new Date()), blockId: null, itemId: null, msg: '', pick: null, sheet: null, bank: { kind: 'atelier', niv: '', dom: '', q: '' }, tdTag: 'classe', tdFolder: '', more: {}, eleveId: null, resTab: 'ateliers', libFolder: '', eq: '', eNiv: '', showDone: false, copySel: {}, copyMode: null, urls: {} };
 
 function dayOf(date, create) { var d = D.days[date]; if (!d && create) d = D.days[date] = { niveaux: ['PS', 'MS', 'GS'], note: '', blocks: [] }; return d; }
 function curBlock() { var d = dayOf(S.date); if (!d) return null; for (var i = 0; i < d.blocks.length; i++) if (d.blocks[i].id === S.blockId) return d.blocks[i]; return null; }
@@ -183,57 +228,104 @@ function blockColor(b) { if (b.color) return b.color; for (var i = 0; i < b.sean
 function tagHTML(o) { return '<span class="tag" style="border-left-color:' + domColor(o.d) + '">' + esc(o.s) + (o.g && o.g !== 'Objectif d’apprentissage' ? ' › ' + esc(o.g) : '') + '</span>'; }
 
 /* ---------- Journal ---------- */
+var PRESETS = [['Accueil', 20, '#e0792f'], ['Regroupement', 20, '#8a5cc2'], ['Ateliers', 45, '#3b78c9'], ['Récréation', 20, '#3a9a5b'], ['Motricité / EPS', 30, '#2a9aa0'], ['Langage', 20, '#c99a14'], ['Collation', 15, '#d65f8e'], ['Rangement', 10, '#6b7a80'], ['Cantine', 60, '#6b7a80'], ['Sieste', 90, '#6b7a80']];
+var IC = {
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
+  tpl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+  prt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="6" rx="1"/></svg>',
+  imp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>'
+};
+function mondayOf(ds) { var d = parseISO(ds), w = (d.getDay() + 6) % 7; return addDays(ds, -w); }
+function srcForCopy() {
+  var w = addDays(S.date, -7), a = dayOf(w);
+  if (a && a.blocks.length) return w;
+  for (var i = 1; i <= 21; i++) { var x = addDays(S.date, -i), dx = dayOf(x); if (dx && dx.blocks.length) return x; }
+  return '';
+}
+function weekHTML() {
+  var mon = mondayOf(S.date), today = iso(new Date()), names = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  var h = '<div class="wk"><button type="button" class="nv" data-a="day" data-p="-7" aria-label="Semaine précédente">‹</button>';
+  for (var i = 0; i < 7; i++) {
+    var ds = addDays(mon, i), dd = dayOf(ds), has = dd && (dd.blocks.length || (dd.docs && dd.docs.length));
+    h += '<button type="button" class="wd' + (ds === S.date ? ' on' : '') + (ds === today ? ' td' : '') + (i > 4 ? ' we' : '') + '" data-a="goDay" data-p="' + ds + '" aria-label="' + esc(fmtDate(ds)) + '"><small>' + names[i] + '</small><b>' + parseISO(ds).getDate() + '</b>' + (has ? '<i></i>' : '') + '</button>';
+  }
+  return h + '<button type="button" class="nv" data-a="day" data-p="7" aria-label="Semaine suivante">›</button></div>';
+}
 function tJournal() {
   if (S.blockId) return tBlock();
-  var d = dayOf(S.date);
-  var h = '<div class="row"><button type="button" class="chip" data-a="day" data-p="-1" aria-label="Jour précédent">‹</button><div class="grow" style="text-align:center"><h1 style="font-size:20px;margin:0">' + esc(fmtDate(S.date)) + '</h1></div><button type="button" class="chip" data-a="day" data-p="1" aria-label="Jour suivant">›</button></div>';
-  h += '<div class="row" style="margin:10px 0"><button type="button" class="link" data-a="today">Aujourd’hui</button><span class="grow"></span><input type="date" id="jump" value="' + esc(S.date) + '" style="width:170px" aria-label="Choisir une date"></div>';
+  var d = dayOf(S.date), today = iso(new Date());
+  var dt = parseISO(S.date), mo = ''; try { mo = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(dt); } catch (e) { mo = ''; }
+  var dn = ''; try { dn = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(dt); } catch (e) { dn = S.date; }
+  var h = '<div class="hd"><div class="grow"><div class="mo">' + esc(mo) + '</div><h1>' + esc(dn) + '</h1></div>';
+  if (S.date !== today) h += '<button type="button" class="chip" data-a="today" style="flex:none">Aujourd’hui</button>';
+  h += '<span class="ib" style="position:relative">' + IC.cal + '<input type="date" id="jump" value="' + esc(S.date) + '" aria-label="Choisir une date" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;min-height:0;padding:0;border:0"></span></div>';
+  h += weekHTML();
   var nv = d ? d.niveaux : ['PS', 'MS', 'GS'];
-  h += '<div class="row wrap" style="margin:0 0 12px"><span class="muted small">Niveaux ce jour-là :</span>';
+  h += '<div class="lv"><span class="muted small">Niveaux</span>';
   ['PS', 'MS', 'GS'].forEach(function (n) { h += '<button type="button" class="chip' + (nv.indexOf(n) >= 0 ? ' on' : '') + '" data-a="dayLevel" data-p="' + n + '">' + n + '</button>'; });
   h += '</div>';
-  var bl = d ? sortedBlocks(d) : [];
+  var bl = d ? sortedBlocks(d) : [], src = srcForCopy();
   if (!bl.length) {
-    h += '<div class="card"><p>Aucun moment prévu ce jour-là.</p><p class="muted small">Pars d’une journée type, copie un autre jour, ou ajoute un moment : accueil, regroupement, ateliers, EPS…</p></div>';
+    h += '<div class="card empty">' + IC.sun + '<h2 style="margin:8px 0 4px">Journée vide</h2><p class="muted small">Pars d’une base, ou ajoute tes moments un par un ci-dessous.</p><div class="stack">';
+    if (src) h += '<button type="button" class="btn" data-a="copyFrom" data-p="' + src + '">Reprendre le ' + esc(fmtWd(src)) + '</button>';
+    h += '<button type="button" class="btn secondary" data-a="tplOpen">Utiliser une journée type</button></div></div>';
   }
   bl.forEach(function (b) {
-    var nobj = b.seances.reduce(function (a, s) { return a + s.obj.length; }, 0), col = blockColor(b);
-    h += '<div class="row" style="align-items:stretch;gap:6px;margin:0 0 10px"><button type="button" class="block grow" data-a="openBlock" data-p="' + b.id + '" style="margin:0;border-left-color:' + col + ';background:linear-gradient(90deg,' + col + '18,var(--card) 60%)"><div class="row"><span class="time" style="color:' + col + '">' + esc((b.time || '--:--') + (endTime(b) ? '–' + endTime(b) : '')) + '</span><strong class="grow">' + esc(b.titre || 'Sans titre') + '</strong><span class="muted small">' + (b.duree ? esc(hm(b.duree)) : '') + '</span></div>';
-    var sub = []; if (b.seances.length > 1) sub.push(b.seances.length + ' groupes'); if (nobj) sub.push(nobj + ' objectif' + (nobj > 1 ? 's' : ''));
-    if (sub.length) h += '<div class="muted small">' + esc(sub.join(' · ')) + '</div>';
-    h += '</button><button type="button" class="chip" data-a="delBlockList" data-p="' + b.id + '" aria-label="Supprimer ce moment" style="color:var(--danger);border-color:var(--danger);min-width:44px;font-size:18px;border-radius:16px">✕</button></div>';
+    var col = blockColor(b), seen = [], tags = '';
+    b.seances.forEach(function (s) { s.obj.forEach(function (o) { if (seen.indexOf(o.s) < 0) seen.push(o.s); }); });
+    seen.slice(0, 2).forEach(function (n) { tags += '<span>' + esc(n) + '</span>'; });
+    if (seen.length > 2) tags += '<span>+' + (seen.length - 2) + '</span>';
+    if (b.seances.length > 1) tags += '<span>' + b.seances.length + ' groupes</span>';
+    var e = endTime(b);
+    h += '<div class="mrow"><button type="button" class="mcard" data-a="openBlock" data-p="' + b.id + '"><span class="mt" style="border-right-color:' + col + ';background:' + col + '22"><b style="color:' + col + '">' + esc(b.time || '--:--') + '</b>' + (e ? '<span>' + esc(e) + '</span>' : '') + '</span><span class="mb"><strong>' + esc(b.titre || 'Sans titre') + '</strong>' + (tags ? '<span class="tg">' + tags + '</span>' : '') + '</span>' + (b.duree ? '<span class="dur">' + esc(hm(b.duree)) + '</span>' : '') + '</button><button type="button" class="xb" data-a="delBlockList" data-p="' + b.id + '" aria-label="Supprimer ce moment">✕</button></div>';
   });
-  h += '<div class="stack" style="margin-top:6px"><button type="button" class="btn" data-a="addBlock">Ajouter un moment</button>';
-  h += '<button type="button" class="btn secondary" data-a="tplOpen">Journées types</button>';
-  if (bl.length) h += '<button type="button" class="btn secondary" data-a="copyOpen" data-p="day">Copier cette journée vers d’autres jours</button><button type="button" class="btn secondary" data-a="printDay">Imprimer ou enregistrer en PDF</button>';
-  h += '</div>';
+  h += '<div class="sec">Ajouter un moment</div><div class="qa">';
+  PRESETS.forEach(function (p, i) { h += '<button type="button" data-a="quick" data-p="' + i + '" style="background:' + p[2] + '">+ ' + esc(p[0]) + '</button>'; });
+  h += '<button type="button" data-a="addBlock" style="background:var(--accent);color:var(--accent-ink)">+ Autre</button></div>';
+  h += '<div class="tiles"><button type="button" class="tile" data-a="tplOpen">' + IC.tpl + 'Journées types</button>';
+  h += bl.length ? '<button type="button" class="tile" data-a="copyOpen" data-p="day">' + IC.copy + 'Copier vers d’autres jours</button>' : (src ? '<button type="button" class="tile" data-a="copyFrom" data-p="' + src + '">' + IC.copy + 'Reprendre le ' + esc(fmtWd(src)) + '</button>' : '');
+  if (bl.length) h += '<button type="button" class="tile" data-a="printDay">' + IC.prt + 'Imprimer / PDF</button>';
+  h += '<label class="tile" for="dayimp" style="cursor:pointer">' + IC.imp + 'Importer un PDF ou une photo</label></div>';
+  h += '<input type="file" id="dayimp" multiple accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.heic" style="display:none"><div id="daymsg" class="small" role="status"></div>';
   var docs = d && d.docs ? d.docs : [];
-  h += '<div class="card" style="margin-top:14px"><h2>Cahier journal importé</h2><p class="muted small">Importe le PDF ou la photo d’un cahier journal fait ailleurs. Il se consulte ici, mais ne se modifie pas : pour un cahier modifiable, crée les moments ci-dessus.</p>';
-  docs.forEach(function (x) { h += '<div class="row" style="margin-bottom:8px"><div class="grow" style="min-width:0"><strong style="word-break:break-word">' + esc(x.nom) + '</strong><div class="muted small">' + esc(fsize(x.size || 0)) + '</div></div><button type="button" class="btn small" data-a="dayDocView" data-p="' + x.id + '">Ouvrir</button><button type="button" class="link" style="color:var(--danger)" data-a="dayDocDel" data-p="' + x.id + '">Retirer</button></div>'; });
-  h += '<label class="btn secondary" for="dayimp" style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer">Importer un PDF ou une image</label><input type="file" id="dayimp" multiple accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.heic" style="display:none"><div id="daymsg" class="small" role="status"></div></div>';
-  h += '<div style="margin-top:14px"><label for="daynote">Remarques de la journée</label><textarea id="daynote" data-bind="d:note" placeholder="Matériel général, rappels…">' + esc(d ? d.note : '') + '</textarea></div>';
+  if (docs.length) {
+    h += '<div class="sec">Documents du jour</div>';
+    docs.forEach(function (x) { h += '<div class="card" style="padding:10px 12px"><div class="row"><div class="grow" style="min-width:0"><strong style="word-break:break-word">' + esc(x.nom) + '</strong><div class="muted small">' + esc(fsize(x.size || 0)) + '</div></div><button type="button" class="btn small" data-a="dayDocView" data-p="' + x.id + '">Ouvrir</button><button type="button" class="link" style="color:var(--danger)" data-a="dayDocDel" data-p="' + x.id + '">Retirer</button></div></div>'; });
+    h += '<p class="hint">Un document importé se consulte mais ne se modifie pas.</p>';
+  }
+  h += '<div class="sec">Remarques de la journée</div><textarea id="daynote" data-bind="d:note" aria-label="Remarques de la journée" placeholder="Matériel général, rappels…">' + esc(d ? d.note : '') + '</textarea>';
   return h;
 }
 
+function oneField(s, f) {
+  var id = 'f' + s.id + f.id, v = s.f[f.id] || '', h = '';
+  if (f.type === 'check') h += '<label class="row" style="font-weight:500"><input type="checkbox" data-bind="s:' + s.id + ':f:' + f.id + ':c"' + (v ? ' checked' : '') + ' style="width:22px;height:22px"> ' + esc(f.label) + '</label>';
+  else if (f.type === 'short') h += '<label for="' + id + '">' + esc(f.label) + '</label><input type="text" id="' + id + '" data-bind="s:' + s.id + ':f:' + f.id + '" value="' + esc(v) + '">';
+  else {
+    h += '<label for="' + id + '">' + esc(f.label) + '</label><textarea id="' + id + '" data-bind="s:' + s.id + ':f:' + f.id + '">' + esc(v) + '</textarea>';
+    if (f.id === 'diff') h += '<p class="hint">Pour protéger les élèves, écris seulement des prénoms ou des initiales.</p>';
+  }
+  return h;
+}
 function fieldsHTML(s) {
-  var h = '';
-  D.fields.forEach(function (f) {
-    if (!f.on) return;
-    var id = 'f' + s.id + f.id, v = s.f[f.id] || '';
-    if (f.type === 'check') h += '<label class="row" style="font-weight:500"><input type="checkbox" data-bind="s:' + s.id + ':f:' + f.id + ':c"' + (v ? ' checked' : '') + ' style="width:22px;height:22px"> ' + esc(f.label) + '</label>';
-    else if (f.type === 'short') h += '<label for="' + id + '">' + esc(f.label) + '</label><input type="text" id="' + id + '" data-bind="s:' + s.id + ':f:' + f.id + '" value="' + esc(v) + '">';
-    else {
-      h += '<label for="' + id + '">' + esc(f.label) + '</label><textarea id="' + id + '" data-bind="s:' + s.id + ':f:' + f.id + '">' + esc(v) + '</textarea>';
-      if (f.id === 'diff') h += '<p class="hint">Pour protéger les élèves, écris seulement des prénoms ou des initiales.</p>';
-    }
-  });
+  var on = D.fields.filter(function (f) { return f.on; }), main = on.slice(0, 3), rest = on.slice(3), h = '';
+  main.forEach(function (f) { h += oneField(s, f); });
+  if (rest.length) {
+    var filled = rest.filter(function (f) { return s.f[f.id]; }).length, open = S.more[s.id] || filled > 0;
+    if (open) rest.forEach(function (f) { h += oneField(s, f); });
+    if (!S.more[s.id] && filled > 0) { /* ouvert car rempli */ }
+    var lab = open && S.more[s.id] ? 'Masquer les autres champs' : open ? '' : 'Plus de champs (' + rest.length + ')';
+    if (lab) h += '<button type="button" class="more" data-a="moreTog" data-p="' + s.id + '">' + lab + '</button>';
+  }
   return h;
 }
 function objHTML(s) {
   var h = '<h3>Objectifs du programme</h3>';
   if (!s.obj.length) h += '<p class="muted small">Aucun objectif choisi.</p>';
   s.obj.forEach(function (o, k) {
-    h += '<div class="row" style="align-items:flex-start;margin-bottom:6px"><div class="grow">' + tagHTML(o) + '<div>' + esc(o.o.replace(/ • /g, '\n• ')) + '</div></div><button type="button" class="link" data-a="rmObj" data-p="' + s.id + '" data-q="' + k + '" aria-label="Retirer cet objectif">Retirer</button></div>';
+    h += '<div class="row" style="align-items:flex-start;margin-bottom:6px"><div class="grow">' + tagHTML(o) + '<div class="small" style="white-space:pre-line">' + esc(o.o.replace(/ • /g, '\n• ')) + '</div></div><button type="button" class="link" data-a="rmObj" data-p="' + s.id + '" data-q="' + k + '" aria-label="Retirer cet objectif">Retirer</button></div>';
   });
   return h + '<button type="button" class="btn secondary small" data-a="pickOpen" data-p="' + s.id + '">Choisir dans le programme</button>';
 }
@@ -260,7 +352,7 @@ function nextStart(d, skip) {
 function tBlock() {
   var b = curBlock(); if (!b) { S.blockId = null; return tJournal(); }
   var h = '<button type="button" class="link" data-a="backDay">‹ Retour à la journée</button>';
-  h += '<div class="card"><div class="row"><div class="grow"><label for="btime" style="margin-top:0">Début</label><input type="time" id="btime" value="' + esc(b.time) + '" data-bind="b:time"></div><div class="grow"><label for="bfin" style="margin-top:0">Fin</label><input type="time" id="bfin" value="' + esc(endTime(b)) + '" data-bind="b:fin"></div></div><label for="bduree">Durée (minutes)</label><input type="number" id="bduree" inputmode="numeric" min="0" value="' + esc(b.duree || '') + '" data-bind="b:duree">';
+  h += '<div class="card" style="border-top:6px solid ' + blockColor(b) + '"><div class="row"><div class="grow"><label for="btime" style="margin-top:0">Début</label><input type="time" id="btime" value="' + esc(b.time) + '" data-bind="b:time"></div><div class="grow"><label for="bfin" style="margin-top:0">Fin</label><input type="time" id="bfin" value="' + esc(endTime(b)) + '" data-bind="b:fin"></div></div><label for="bduree">Durée (minutes)</label><input type="number" id="bduree" inputmode="numeric" min="0" value="' + esc(b.duree || '') + '" data-bind="b:duree">';
   h += '<label>Durée rapide</label>' + durChips('b', b.duree);
   h += '<p class="hint" id="bhint">Fin du moment : ' + esc(endTime(b) || '—') + '</p>';
   h += '<label for="btitre">Titre du moment</label><input type="text" id="btitre" value="' + esc(b.titre) + '" data-bind="b:titre" placeholder="Ex. : Regroupement, Ateliers, EPS…">';
@@ -672,7 +764,7 @@ function act(a, p, q) {
   else if (a === 'day') { S.date = addDays(S.date, parseInt(p, 10)); render({ top: true }); }
   else if (a === 'today') { S.date = iso(new Date()); render({ top: true }); }
   else if (a === 'dayLevel') { var d = dayOf(S.date, true), i = d.niveaux.indexOf(p); if (i >= 0) d.niveaux.splice(i, 1); else d.niveaux.push(p); save(); render(); }
-  else if (a === 'addBlock') { var d2 = dayOf(S.date, true), b = { id: uid(), time: nextStart(d2), titre: '', duree: 0, color: '', seances: [newSeance()] }; d2.blocks.push(b); save(); S.blockId = b.id; render({ top: true }); }
+  else if (a === 'addBlock') { var d2 = dayOf(S.date, true), b = { id: uid(), time: nextStart(d2) || (d2.blocks.length ? '' : '08:30'), titre: '', duree: 0, color: '', seances: [newSeance()] }; d2.blocks.push(b); save(); S.blockId = b.id; render({ top: true }); }
   else if (a === 'openBlock') { S.blockId = p; var ob = curBlock(); if (ob && !ob.time) { ob.time = nextStart(dayOf(S.date), ob.id); save(); } render({ top: true }); }
   else if (a === 'backDay') { S.blockId = null; render({ top: true }); }
   else if (a === 'setDur') { var m = parseInt(q, 10), tg = p === 'b' ? curBlock() : bankItem(S.itemId); if (tg) { tg.duree = m; save(); render(); } }
@@ -788,6 +880,14 @@ function act(a, p, q) {
   }
   else if (a === 'dayDocDel') { confirmSheet('Retirer ce document de cette journée ?', 'dayDocDelOk', p); }
   else if (a === 'dayDocDelOk') { var d9 = dayOf(S.date); if (d9 && d9.docs) { idbDel(p); d9.docs = d9.docs.filter(function (z) { return z.id !== p; }); save(); } closeSheet(); render(); }
+  else if (a === 'goDay') { S.date = p; render(); }
+  else if (a === 'moreTog') { S.more[p] = !S.more[p]; render(); }
+  else if (a === 'quick') {
+    var pr = PRESETS[parseInt(p, 10)], dq = dayOf(S.date, true);
+    dq.blocks.push({ id: uid(), time: nextStart(dq) || (dq.blocks.length ? '' : '08:30'), titre: pr[0], duree: pr[1], color: pr[2], seances: [newSeance()] }); save(); render();
+    var vw = $('#view'); setTimeout(function () { var cs = document.querySelectorAll('.mrow'); if (cs.length) cs[cs.length - 1].scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 30);
+  }
+  else if (a === 'copyFrom') { var sd = dayOf(p); if (sd) { copyBlocksTo(S.date, sd.blocks); save(); render({ top: true }); } }
   else if (a === 'eNiv') { S.eNiv = p; render(); }
   else if (a === 'eNew') { var ne = { id: uid(), prenom: '', niveau: S.eNiv || '', notes: [] }; D.eleves.push(ne); save(); S.eleveId = ne.id; render({ top: true }); }
   else if (a === 'eOpen') { S.eleveId = p; render({ top: true }); }
