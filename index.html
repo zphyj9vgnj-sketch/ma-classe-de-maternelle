@@ -75,7 +75,7 @@ audio, video { width:100%; margin-top:8px; border-radius:12px; }
 <div id="app"><main id="view" tabindex="-1"></main>
 <nav id="nav" aria-label="Navigation">
 <button type="button" data-a="tab" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 8h6M9 12h6"/></svg>Journal</button>
-<button type="button" data-a="tab" data-p="bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Ateliers</button>
+<button type="button" data-a="tab" data-p="bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Réserve</button>
 <button type="button" data-a="tab" data-p="todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7l2 2 3-3M5 15l2 2 3-3M13 8h6M13 16h6"/></svg>À faire</button>
 <button type="button" data-a="tab" data-p="comp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>Comptines</button>
 <button type="button" data-a="tab" data-p="eleves"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>Élèves</button>
@@ -124,7 +124,7 @@ function defaultMine() {
 function defaults() {
   return {
     v: 2,
-    fields: BUILTIN.map(function (b) { return { id: b[0], label: b[1], type: b[2], on: true, builtin: true, req: b[0] === 'objectif' || b[0] === 'activites' }; }),
+    fields: BUILTIN.map(function (b) { return { id: b[0], label: b[1], type: b[2], on: true, builtin: true }; }),
     days: {}, bank: [], todo: [], comptines: [], templates: [], mine: defaultMine(),
     cats: [
       { id: 'apc', nom: 'APC (activités pédagogiques complémentaires)', total: 36, entries: [] },
@@ -137,12 +137,15 @@ function defaults() {
 var D;
 function fixData() {
   var d0 = defaults();
-  ['bank', 'todo', 'comptines', 'templates', 'todoFolders', 'eleves'].forEach(function (k) { if (!Array.isArray(D[k])) D[k] = []; });
+  ['bank', 'todo', 'comptines', 'templates', 'todoFolders', 'eleves', 'libFolders', 'libFiles'].forEach(function (k) { if (!Array.isArray(D[k])) D[k] = []; });
   if (!Array.isArray(D.mine)) D.mine = d0.mine;
-  var hasO = false;
-  D.fields.forEach(function (f) { if (f.id === 'objectif') hasO = true; if (f.id === 'activites') { f.req = true; f.on = true; if (/Activités/.test(f.label)) f.label = 'Déroulement'; } });
-  if (!hasO) D.fields.unshift({ id: 'objectif', label: 'Objectif', type: 'long', on: true, builtin: true, req: true });
-  D.fields.forEach(function (f) { if (f.id === 'objectif') { f.req = true; f.on = true; } });
+  if (!D.mig3) {
+    var hasO = false;
+    D.fields.forEach(function (f) { if (f.id === 'objectif') hasO = true; if (f.id === 'activites' && /Activités/.test(f.label)) f.label = 'Déroulement'; });
+    if (!hasO) D.fields.unshift({ id: 'objectif', label: 'Objectif', type: 'long', on: true, builtin: true });
+    D.mig3 = true;
+  }
+  D.fields.forEach(function (f) { delete f.req; });
   D.v = 2;
 }
 function load() {
@@ -168,7 +171,7 @@ function idbPut(id, blob) { return idb().then(function (db) { return new Promise
 function idbGet(id) { return idb().then(function (db) { return new Promise(function (res, rej) { var q = db.transaction('f').objectStore('f').get(id); q.onsuccess = function () { res(q.result); }; q.onerror = function () { rej(q.error); }; }); }); }
 function idbDel(id) { return idb().then(function (db) { return new Promise(function (res) { var t = db.transaction('f', 'readwrite'); t.objectStore('f').delete(id); t.oncomplete = res; t.onerror = res; }); }).catch(function () {}); }
 
-var S = { tab: 'journal', date: iso(new Date()), blockId: null, itemId: null, msg: '', pick: null, sheet: null, bank: { kind: 'atelier', niv: '', dom: '', q: '' }, tdTag: 'classe', tdFolder: '', eleveId: null, eq: '', eNiv: '', showDone: false, copySel: {}, copyMode: null, urls: {} };
+var S = { tab: 'journal', date: iso(new Date()), blockId: null, itemId: null, msg: '', pick: null, sheet: null, bank: { kind: 'atelier', niv: '', dom: '', q: '' }, tdTag: 'classe', tdFolder: '', eleveId: null, resTab: 'ateliers', libFolder: '', eq: '', eNiv: '', showDone: false, copySel: {}, copyMode: null, urls: {} };
 
 function dayOf(date, create) { var d = D.days[date]; if (!d && create) d = D.days[date] = { niveaux: ['PS', 'MS', 'GS'], note: '', blocks: [] }; return d; }
 function curBlock() { var d = dayOf(S.date); if (!d) return null; for (var i = 0; i < d.blocks.length; i++) if (d.blocks[i].id === S.blockId) return d.blocks[i]; return null; }
@@ -204,6 +207,10 @@ function tJournal() {
   h += '<button type="button" class="btn secondary" data-a="tplOpen">Journées types</button>';
   if (bl.length) h += '<button type="button" class="btn secondary" data-a="copyOpen" data-p="day">Copier cette journée vers d’autres jours</button><button type="button" class="btn secondary" data-a="printDay">Imprimer ou enregistrer en PDF</button>';
   h += '</div>';
+  var docs = d && d.docs ? d.docs : [];
+  h += '<div class="card" style="margin-top:14px"><h2>Cahier journal importé</h2><p class="muted small">Importe le PDF ou la photo d’un cahier journal fait ailleurs. Il se consulte ici, mais ne se modifie pas : pour un cahier modifiable, crée les moments ci-dessus.</p>';
+  docs.forEach(function (x) { h += '<div class="row" style="margin-bottom:8px"><div class="grow" style="min-width:0"><strong style="word-break:break-word">' + esc(x.nom) + '</strong><div class="muted small">' + esc(fsize(x.size || 0)) + '</div></div><button type="button" class="btn small" data-a="dayDocView" data-p="' + x.id + '">Ouvrir</button><button type="button" class="link" style="color:var(--danger)" data-a="dayDocDel" data-p="' + x.id + '">Retirer</button></div>'; });
+  h += '<label class="btn secondary" for="dayimp" style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer">Importer un PDF ou une image</label><input type="file" id="dayimp" multiple accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.heic" style="display:none"><div id="daymsg" class="small" role="status"></div></div>';
   h += '<div style="margin-top:14px"><label for="daynote">Remarques de la journée</label><textarea id="daynote" data-bind="d:note" placeholder="Matériel général, rappels…">' + esc(d ? d.note : '') + '</textarea></div>';
   return h;
 }
@@ -299,7 +306,9 @@ function bankListHTML() {
 function tBank() {
   if (S.itemId) return tItem();
   var f = S.bank;
-  var h = '<h1>Ateliers et rituels</h1><p class="muted">Ta banque, pour ne pas tout réécrire.</p>';
+  var seg = '<div class="row" style="margin:6px 0 10px"><button type="button" class="chip grow' + (S.resTab === 'ateliers' ? ' on' : '') + '" data-a="resTab" data-p="ateliers">Ateliers et rituels</button><button type="button" class="chip grow' + (S.resTab === 'lib' ? ' on' : '') + '" data-a="resTab" data-p="lib">Bibliothèque</button></div>';
+  if (S.resTab === 'lib') return '<h1>Réserve</h1>' + seg + tLib();
+  var h = '<h1>Réserve</h1>' + seg + '<p class="muted">Tes ateliers et rituels, pour ne pas tout réécrire.</p>';
   h += '<div class="row wrap" style="margin:8px 0"><button type="button" class="chip' + (f.kind === 'atelier' ? ' on' : '') + '" data-a="bKind" data-p="atelier">Ateliers</button><button type="button" class="chip' + (f.kind === 'rituel' ? ' on' : '') + '" data-a="bKind" data-p="rituel">Rituels</button></div>';
   h += '<div class="row wrap" style="margin:0 0 8px">';
   [['', 'Tous niveaux'], ['PS', 'PS'], ['MS', 'MS'], ['GS', 'GS']].forEach(function (n) { h += '<button type="button" class="chip' + (f.niv === n[0] ? ' on' : '') + '" data-a="bNiv" data-p="' + n[0] + '">' + n[1] + '</button>'; });
@@ -389,6 +398,51 @@ function tEleve() {
   return h;
 }
 
+/* ---------- Bibliothèque ---------- */
+function libFolderOf(id) { for (var i = 0; i < D.libFolders.length; i++) if (D.libFolders[i].id === id) return D.libFolders[i]; return null; }
+function libFileOf(id) { for (var i = 0; i < D.libFiles.length; i++) if (D.libFiles[i].id === id) return D.libFiles[i]; return null; }
+function libPath(id) { var out = [], g = 0, f; while (id && (f = libFolderOf(id)) && g++ < 20) { out.unshift(f.nom); id = f.parent; } return out; }
+function libDesc(id) { var ids = [id]; D.libFolders.forEach(function () { D.libFolders.forEach(function (f) { if (ids.indexOf(f.parent) >= 0 && ids.indexOf(f.id) < 0) ids.push(f.id); }); }); return ids; }
+function fsize(n) { return n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(n / 1024)) + ' Ko'; }
+function tLib() {
+  var cur = S.libFolder, h = '';
+  if (cur && !libFolderOf(cur)) cur = S.libFolder = '';
+  var path = libPath(cur);
+  if (cur) {
+    var par = libFolderOf(cur).parent || '';
+    h += '<button type="button" class="link" data-a="libOpenFolder" data-p="' + esc(par) + '">‹ ' + (par ? esc(libFolderOf(par).nom) : 'Bibliothèque') + '</button>';
+    h += '<div class="row"><h2 class="grow" style="margin:0">' + esc(path.join(' › ')) + '</h2><button type="button" class="link" data-a="libFolderEdit" data-p="' + esc(cur) + '">Modifier</button></div>';
+  } else h += '<p class="muted">Tes documents rangés par dossiers : programmations, fiches de préparation, images…</p>';
+  var subs = D.libFolders.filter(function (f) { return (f.parent || '') === cur; }).sort(function (a, b) { return a.nom.localeCompare(b.nom, 'fr'); });
+  var files = D.libFiles.filter(function (f) { return (f.folder || '') === cur; }).sort(function (a, b) { return a.nom.localeCompare(b.nom, 'fr'); });
+  h += '<div style="margin-top:10px">';
+  subs.forEach(function (f) {
+    var n = D.libFiles.filter(function (x) { return x.folder === f.id; }).length + D.libFolders.filter(function (x) { return x.parent === f.id; }).length;
+    h += '<button type="button" class="block" data-a="libOpenFolder" data-p="' + f.id + '" style="border-left-color:#c99a14"><div class="row"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#c99a14" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><strong class="grow">' + esc(f.nom) + '</strong><span class="muted small">' + n + ' élément' + (n > 1 ? 's' : '') + '</span></div></button>';
+  });
+  files.forEach(function (f) {
+    var img = /^image\//.test(f.mime || '');
+    h += '<div class="card" style="border-left:8px solid ' + (img ? '#3a9a5b' : '#3b78c9') + ';padding:10px 12px"><div class="row"><div class="grow"><strong style="word-break:break-word">' + esc(f.nom) + '</strong><div class="muted small">' + (img ? 'Image' : 'PDF') + ' · ' + esc(fsize(f.size || 0)) + ' · ' + esc(fmtShort(f.date)) + '</div></div><button type="button" class="btn small" data-a="libView" data-p="' + f.id + '">Ouvrir</button><button type="button" class="link" data-a="libEdit" data-p="' + f.id + '">Modifier</button></div></div>';
+  });
+  if (!subs.length && !files.length) h += '<div class="card"><p>' + (cur ? 'Ce dossier est vide.' : 'Ta bibliothèque est vide.') + '</p></div>';
+  h += '</div><div class="stack" style="margin-top:6px"><label class="btn" for="libimp" style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer">Importer des documents (PDF, images)</label><input type="file" id="libimp" multiple accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.heic" style="display:none"><button type="button" class="btn secondary" data-a="libFolderNew">Nouveau dossier' + (cur ? ' ici' : '') + '</button></div><p class="hint">Les documents restent sur ce téléphone et ne sont pas inclus dans la sauvegarde.</p><div id="libmsg" class="small" role="status"></div>';
+  return h;
+}
+function libFolderOptions(sel, exclude) {
+  var h = '<option value="">Bibliothèque (racine)</option>';
+  D.libFolders.slice().sort(function (a, b) { return libPath(a.id).join('/').localeCompare(libPath(b.id).join('/'), 'fr'); }).forEach(function (f) { if (exclude && exclude.indexOf(f.id) >= 0) return; h += '<option value="' + f.id + '"' + (sel === f.id ? ' selected' : '') + '>' + esc(libPath(f.id).join(' › ')) + '</option>'; });
+  return h;
+}
+function libImport(files) {
+  var msg = $('#libmsg'); if (msg) msg.textContent = 'Enregistrement…';
+  var list = Array.prototype.slice.call(files), fail = 0;
+  list.reduce(function (p, f) {
+    return p.then(function () {
+      var id = 'L' + uid();
+      return idbPut(id, f).then(function () { D.libFiles.push({ id: id, folder: S.libFolder || '', nom: f.name.replace(/\.(pdf|png|jpe?g|heic)$/i, ''), mime: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : ''), size: f.size, date: iso(new Date()) }); }).catch(function () { fail++; });
+    });
+  }, Promise.resolve()).then(function () { save(); render(); var m2 = $('#libmsg'); if (m2 && fail) m2.textContent = fail + ' fichier(s) n’ont pas pu être enregistrés (place insuffisante ?).'; });
+}
 /* ---------- Comptines ---------- */
 function tComp() {
   var h = '<h1>Comptines du moment</h1><p class="muted">Un fichier audio ou vidéo, un lien, et les paroles en PDF.</p>';
@@ -449,12 +503,12 @@ function tH108() {
 /* ---------- Réglages ---------- */
 function tReglages() {
   var h = '<h1>Réglages</h1>';
-  h += '<div class="card"><h2>Champs (cahier journal et ateliers)</h2><p class="muted small">Affiche, cache, renomme ou ajoute les champs. Les champs cachés gardent leur contenu.</p>';
+  h += '<div class="card"><h2>Champs (cahier journal et ateliers)</h2><p class="muted small">Tous les champs se renomment, se cachent ou se suppriment (✕), et tu peux en ajouter. Les champs cachés gardent leur contenu.</p>';
   D.fields.forEach(function (f) {
-    h += '<div class="row" style="margin-bottom:8px"><button type="button" class="chip' + (f.on ? ' on' : '') + '" ' + (f.req ? 'disabled style="opacity:.6" ' : '') + 'data-a="fToggle" data-p="' + f.id + '" aria-label="' + (f.on ? 'Cacher' : 'Afficher') + ' ' + esc(f.label) + '">' + (f.on ? 'Oui' : 'Non') + '</button><input type="text" class="grow" data-bind="f:' + f.id + ':label" value="' + esc(f.label) + '" aria-label="Nom du champ"><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="-1" aria-label="Monter">↑</button><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="1" aria-label="Descendre">↓</button>' + (f.builtin ? '' : '<button type="button" class="chip" data-a="fDel" data-p="' + f.id + '" aria-label="Supprimer le champ" style="color:var(--danger)">✕</button>') + '</div>';
+    h += '<div class="row" style="margin-bottom:8px"><button type="button" class="chip' + (f.on ? ' on' : '') + '" ' + 'data-a="fToggle" data-p="' + f.id + '" aria-label="' + (f.on ? 'Cacher' : 'Afficher') + ' ' + esc(f.label) + '">' + (f.on ? 'Oui' : 'Non') + '</button><input type="text" class="grow" data-bind="f:' + f.id + ':label" value="' + esc(f.label) + '" aria-label="Nom du champ"><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="-1" aria-label="Monter">↑</button><button type="button" class="chip" data-a="fMove" data-p="' + f.id + '" data-q="1" aria-label="Descendre">↓</button>' + ('<button type="button" class="chip" data-a="fDel" data-p="' + f.id + '" aria-label="Supprimer le champ" style="color:var(--danger)">✕</button>') + '</div>';
   });
   h += '<button type="button" class="btn secondary" data-a="fAdd">Ajouter un champ</button></div>';
-  h += '<div class="card"><h2>Sauvegarde</h2><p class="muted small">Tout reste sur ce téléphone. Crée un fichier de sauvegarde pour changer de téléphone ou garder une copie. Les fichiers des comptines (audio, vidéo, PDF) ne sont pas inclus.</p><div class="stack"><button type="button" class="btn secondary" data-a="export">Créer ma sauvegarde</button><label class="btn secondary" for="imp" style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer">Retrouver ma sauvegarde</label><input type="file" id="imp" accept=".json,application/json,text/plain" style="display:none"></div>' + (S.msg ? '<p class="small" role="status" style="margin-top:8px">' + esc(S.msg) + '</p>' : '') + '</div>';
+  h += '<div class="card"><h2>Sauvegarde</h2><p class="muted small">Tout reste sur ce téléphone. Crée un fichier de sauvegarde pour changer de téléphone ou garder une copie. Les fichiers (comptines, documents de la bibliothèque) ne sont pas inclus.</p><div class="stack"><button type="button" class="btn secondary" data-a="export">Créer ma sauvegarde</button><label class="btn secondary" for="imp" style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer">Retrouver ma sauvegarde</label><input type="file" id="imp" accept=".json,application/json,text/plain" style="display:none"></div>' + (S.msg ? '<p class="small" role="status" style="margin-top:8px">' + esc(S.msg) + '</p>' : '') + '</div>';
   h += '<div class="card"><h2>Confidentialité</h2><p class="small">Aucun compte, aucune publicité, aucune donnée envoyée. Tout est enregistré sur ton téléphone. Pour protéger les enfants, n’écris que des prénoms ou des initiales, jamais de noms complets ni de coordonnées.</p></div>';
   return h;
 }
@@ -700,6 +754,40 @@ function act(a, p, q) {
     closeSheet(); render();
   }
   /* à faire */
+  else if (a === 'resTab') { S.resTab = p; S.itemId = null; render({ top: true }); }
+  else if (a === 'libOpenFolder') { S.libFolder = p; render({ top: true }); }
+  else if (a === 'libFolderNew') { formSheet('Nouveau dossier', '<label for="lfn">Nom du dossier</label><input type="text" id="lfn" placeholder="Ex. : Programmations, Période 1…">', 'Créer', 'libFolderSave', ''); }
+  else if (a === 'libFolderEdit') { var lf = libFolderOf(p); if (lf) formSheet('Dossier', '<label for="lfn">Nom du dossier</label><input type="text" id="lfn" value="' + esc(lf.nom) + '">', 'Enregistrer', 'libFolderSave', p, '<button type="button" class="btn danger" data-a="libFolderDel" data-p="' + p + '">Supprimer le dossier et son contenu</button>'); }
+  else if (a === 'libFolderSave') { var ln = ($('#lfn').value || '').trim() || 'Dossier'; if (p) { var lf2 = libFolderOf(p); if (lf2) lf2.nom = ln; } else { var nf2 = { id: uid(), nom: ln, parent: S.libFolder || '' }; D.libFolders.push(nf2); S.libFolder = nf2.id; } save(); closeSheet(); render({ top: true }); }
+  else if (a === 'libFolderDel') { confirmSheet('Supprimer ce dossier, ses sous-dossiers et tous les documents qu’ils contiennent ?', 'libFolderDelOk', p); }
+  else if (a === 'libFolderDelOk') { var ids = libDesc(p), par2 = (libFolderOf(p) || {}).parent || ''; D.libFiles.filter(function (f) { return ids.indexOf(f.folder) >= 0; }).forEach(function (f) { idbDel(f.id); }); D.libFiles = D.libFiles.filter(function (f) { return ids.indexOf(f.folder) < 0; }); D.libFolders = D.libFolders.filter(function (f) { return ids.indexOf(f.id) < 0; }); S.libFolder = par2; save(); closeSheet(); render({ top: true }); }
+  else if (a === 'libEdit') { var fi = libFileOf(p); if (fi) formSheet('Document', '<label for="lnm">Nom</label><input type="text" id="lnm" value="' + esc(fi.nom) + '"><label for="lfo">Dossier</label><select id="lfo">' + libFolderOptions(fi.folder || '') + '</select>', 'Enregistrer', 'libEditSave', p, '<button type="button" class="btn danger" data-a="libDel" data-p="' + p + '">Supprimer le document</button>'); }
+  else if (a === 'libEditSave') { var fi2 = libFileOf(p); if (fi2) { fi2.nom = ($('#lnm').value || '').trim() || fi2.nom; fi2.folder = $('#lfo').value; save(); } closeSheet(); render(); }
+  else if (a === 'libDel') { confirmSheet('Supprimer ce document ?', 'libDelOk', p); }
+  else if (a === 'libDelOk') { idbDel(p); D.libFiles = D.libFiles.filter(function (f) { return f.id !== p; }); save(); closeSheet(); render(); }
+  else if (a === 'libView') {
+    var fv = libFileOf(p); if (!fv) return;
+    var isImg = /^image\//.test(fv.mime || ''), w2 = null;
+    if (!isImg) { try { w2 = window.open('', '_blank'); } catch (e) { w2 = null; } }
+    idbGet(p).then(function (blob) {
+      if (!blob) { if (w2) w2.close(); var m3 = $('#libmsg'); if (m3) m3.textContent = 'Document introuvable sur cet appareil.'; return; }
+      var url = URL.createObjectURL(isImg ? blob : new Blob([blob], { type: 'application/pdf' }));
+      if (isImg) { openSheet('<div class="row"><h2 class="grow" style="margin:0">' + esc(fv.nom) + '</h2><button type="button" class="link" data-a="sheetClose">Fermer</button></div><img src="' + url + '" alt="' + esc(fv.nom) + '" style="width:100%;border-radius:12px;margin-top:10px">'); }
+      else if (w2) w2.location.href = url; else window.location.href = url;
+    }).catch(function () { if (w2) w2.close(); });
+  }
+  else if (a === 'dayDocView') {
+    var dd = dayOf(S.date), x = dd && (dd.docs || []).filter(function (z) { return z.id === p; })[0]; if (!x) return;
+    var isI = /^image\//.test(x.mime || ''), w3 = null; if (!isI) { try { w3 = window.open('', '_blank'); } catch (e) { w3 = null; } }
+    idbGet(p).then(function (blob) {
+      if (!blob) { if (w3) w3.close(); var m4 = $('#daymsg'); if (m4) m4.textContent = 'Document introuvable sur cet appareil.'; return; }
+      var url = URL.createObjectURL(isI ? blob : new Blob([blob], { type: 'application/pdf' }));
+      if (isI) openSheet('<div class="row"><h2 class="grow" style="margin:0">' + esc(x.nom) + '</h2><button type="button" class="link" data-a="sheetClose">Fermer</button></div><img src="' + url + '" alt="" style="width:100%;border-radius:12px;margin-top:10px">');
+      else if (w3) w3.location.href = url; else window.location.href = url;
+    }).catch(function () { if (w3) w3.close(); });
+  }
+  else if (a === 'dayDocDel') { confirmSheet('Retirer ce document de cette journée ?', 'dayDocDelOk', p); }
+  else if (a === 'dayDocDelOk') { var d9 = dayOf(S.date); if (d9 && d9.docs) { idbDel(p); d9.docs = d9.docs.filter(function (z) { return z.id !== p; }); save(); } closeSheet(); render(); }
   else if (a === 'eNiv') { S.eNiv = p; render(); }
   else if (a === 'eNew') { var ne = { id: uid(), prenom: '', niveau: S.eNiv || '', notes: [] }; D.eleves.push(ne); save(); S.eleveId = ne.id; render({ top: true }); }
   else if (a === 'eOpen') { S.eleveId = p; render({ top: true }); }
@@ -781,7 +869,7 @@ function act(a, p, q) {
   /* champs */
   else if (a === 'fToggle') { D.fields.forEach(function (f) { if (f.id === p) f.on = !f.on; }); save(); render(); }
   else if (a === 'fMove') { var idx = -1; D.fields.forEach(function (f, i) { if (f.id === p) idx = i; }); var to2 = idx + parseInt(q, 10); if (idx >= 0 && to2 >= 0 && to2 < D.fields.length) { var t = D.fields[idx]; D.fields[idx] = D.fields[to2]; D.fields[to2] = t; save(); render(); } }
-  else if (a === 'fDel') { confirmSheet('Supprimer ce champ ? Son contenu sera perdu dans toutes les séances.', 'fDelOk', p); }
+  else if (a === 'fDel') { confirmSheet('Supprimer ce champ ? Son contenu sera perdu dans toutes les séances. Tu pourras toujours le recréer avec « Ajouter un champ ».', 'fDelOk', p); }
   else if (a === 'fDelOk') { D.fields = D.fields.filter(function (f) { return f.id !== p; }); save(); closeSheet(); render(); }
   else if (a === 'fAdd') { formSheet('Nouveau champ', '<label for="fn">Nom du champ</label><input type="text" id="fn" placeholder="Ex. : Langage oral…"><label for="ft">Type</label><select id="ft"><option value="long">Texte long</option><option value="short">Texte court</option><option value="check">Case à cocher</option></select>', 'Ajouter', 'fAddOk'); }
   else if (a === 'fAddOk') { var fn = $('#fn').value.trim(); if (fn) { D.fields.push({ id: 'c' + uid(), label: fn, type: $('#ft').value, on: true }); save(); } closeSheet(); render(); }
@@ -818,6 +906,14 @@ document.addEventListener('change', function (ev) {
   var el = ev.target;
   if (el.getAttribute && el.getAttribute('data-a') === 'tdTog') { act('tdTog', el.getAttribute('data-p')); return; }
   var kb = el.getAttribute && el.getAttribute('data-bind'); if (kb && (el.type === 'time' || el.type === 'number')) { bind(kb, el.value, el.checked); save(); return; }
+  if (el.id === 'dayimp') {
+    if (el.files && el.files.length) {
+      var dt0 = S.date, dm = $('#daymsg'), fails = 0; if (dm) dm.textContent = 'Enregistrement…';
+      Array.prototype.slice.call(el.files).reduce(function (pr, f) { return pr.then(function () { var id = 'D' + uid(); return idbPut(id, f).then(function () { var dy = dayOf(dt0, true); dy.docs = dy.docs || []; dy.docs.push({ id: id, nom: f.name, mime: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : ''), size: f.size }); }).catch(function () { fails++; }); }); }, Promise.resolve()).then(function () { save(); render(); var m5 = $('#daymsg'); if (m5 && fails) m5.textContent = 'Un fichier n’a pas pu être enregistré (place insuffisante ?).'; });
+    }
+    return;
+  }
+  if (el.id === 'libimp') { if (el.files && el.files.length) { libImport(el.files); } return; }
   if (el.id === 'jump') { if (el.value) { S.date = el.value; S.blockId = null; render({ top: true }); } }
   else if (el.id === 'bdom') { S.bank.dom = el.value; render(); }
   else if (el.id === 'ikind') { /* déjà lié */ }
