@@ -308,7 +308,7 @@ function tJournal() {
   h += '<div class="sec">Ajouter un moment</div><div class="qa">';
   PRESETS.forEach(function (p, i) { h += '<button type="button" data-a="quick" data-p="' + i + '" style="background:' + p[2] + '">+ ' + esc(p[0]) + '</button>'; });
   h += '<button type="button" data-a="addBlock" style="background:var(--accent);color:var(--accent-ink)">+ Autre</button></div>';
-  h += '<div class="tiles"><button type="button" class="tile" data-a="tplOpen">' + IC.tpl + 'Journées types</button><button type="button" class="tile" data-a="reserveOpen">' + IC.bank + 'Réserve d’ateliers</button>';
+  h += '<div class="tiles"><button type="button" class="tile" data-a="reserveMenu">' + IC.bank + 'Réserve</button>';
   h += bl.length ? '<button type="button" class="tile" data-a="copyOpen" data-p="day">' + IC.copy + 'Copier vers d’autres jours</button>' : (src ? '<button type="button" class="tile" data-a="copyFrom" data-p="' + src + '">' + IC.copy + 'Reprendre le ' + esc(fmtWd(src)) + '</button>' : '');
   if (bl.length) h += '<button type="button" class="tile" data-a="printDay">' + IC.prt + 'Exporter en PDF</button>';
   h += '<label class="tile" for="dayimp" style="cursor:pointer">' + IC.imp + 'Importer un PDF ou une photo</label></div>';
@@ -955,7 +955,8 @@ function act(a, p, q) {
   }
   /* journées types */
   else if (a === 'tplOpen') { tplSheet(); }
-  else if (a === 'reserveOpen') { S.reserve = true; S.itemId = null; render({ top: true }); }
+  else if (a === 'reserveMenu') { openSheet('<h2>Réserve</h2><p class="muted small">Ce que tu as mis de côté pour gagner du temps.</p><button type="button" class="opt" data-a="tplOpen"><strong>Journées types</strong><span class="muted small"> · des trames de journée à appliquer</span></button><button type="button" class="opt" data-a="reserveOpen"><strong>Ateliers et rituels</strong><span class="muted small"> · ta banque d’ateliers</span></button><button type="button" class="btn secondary" style="margin-top:10px" data-a="sheetClose">Fermer</button>'); }
+  else if (a === 'reserveOpen') { closeSheet(); S.reserve = true; S.itemId = null; render({ top: true }); }
   else if (a === 'reserveClose') { S.reserve = false; S.itemId = null; render({ top: true }); }
   else if (a === 'tplSave') { var nm = ($('#tplname').value || '').trim() || 'Journée type', src2 = dayOf(S.date); if (src2) { D.templates.push({ id: uid(), nom: nm, blocks: clone(src2.blocks) }); save(); } tplSheet(); }
   else if (a === 'tplApply') { D.templates.forEach(function (t) { if (t.id === p) copyBlocksTo(S.date, t.blocks); }); save(); closeSheet(); render({ top: true }); }
